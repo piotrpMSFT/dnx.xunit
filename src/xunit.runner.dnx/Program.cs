@@ -27,12 +27,14 @@ namespace Xunit.Runner.Dnx
         IRunnerLogger logger;
         IMessageSink reporterMessageHandler;
         readonly IServiceProvider services;
+        readonly IApplicationShutdown shutdown;
 
-        public Program(IApplicationEnvironment appEnv, IServiceProvider services, ILibraryManager libraryManager)
+        public Program(IApplicationEnvironment appEnv, IServiceProvider services, ILibraryManager libraryManager, IApplicationShutdown shutdown)
         {
             this.appEnv = appEnv;
             this.services = services;
             this.libraryManager = libraryManager;
+            this.shutdown = shutdown;
         }
 
         [STAThread]
@@ -50,6 +52,16 @@ namespace Xunit.Runner.Dnx
                     PrintUsage(reporters);
                     return 1;
                 }
+
+                shutdown.ShutdownRequested.Register(() =>
+                {
+                    Console.WriteLine("Execution was cancelled, exiting.");
+#if DNXCORE50
+                    Environment.FailFast(null);
+#else
+                    Environment.Exit(1);
+#endif
+                });
 
 #if !DNXCORE50
                 AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
