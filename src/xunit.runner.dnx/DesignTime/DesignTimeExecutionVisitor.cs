@@ -10,12 +10,9 @@ namespace Xunit.Runner.Dnx
     {
         private readonly ITestExecutionSink _sink;
         private readonly IDictionary<ITestCase, VsTestCase> _conversions;
-        private readonly TestMessageVisitor<ITestAssemblyFinished> _next;
+        private readonly IMessageSink _next;
 
-        public DesignTimeExecutionVisitor(
-            ITestExecutionSink sink,
-            IDictionary<ITestCase, VsTestCase> conversions,
-            TestMessageVisitor<ITestAssemblyFinished> next)
+        public DesignTimeExecutionVisitor(ITestExecutionSink sink, IDictionary<ITestCase, VsTestCase> conversions, IMessageSink next)
         {
             _sink = sink;
             _conversions = conversions;

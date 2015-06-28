@@ -1,5 +1,5 @@
 ﻿{
-    "authors": ["James Newkirk", "Brad Wilson"],
+    "authors": [ "James Newkirk", "Brad Wilson" ],
     "title": "xUnit.net [Runner: DNX / DNX Core]",
     "description": "Console and Visual Studio runner for xUnit.net. Supported platforms: DNX 4.5.1+, DNX Core 5+",
     "projectUrl": "https://github.com/xunit/dnx.xunit",
@@ -41,10 +41,12 @@
         }
     },
     "dependencies": {
+        "Microsoft.Framework.Runtime": "1.0.0-beta5-*",
         "Microsoft.Framework.Runtime.Abstractions": "1.0.0-beta5-*",
         "Microsoft.Framework.TestAdapter": "1.0.0-beta5-*",
         "Microsoft.Framework.TestHost": "1.0.0-beta5-*",
-        "xunit.runner.utility": "2.1.0-*"
+        "xunit.runner.utility": "2.1.0-beta3-*",
+        "xunit.runner.reporters": "2.1.0-beta3-*"
     },
     "commands": {
         "xunit": "xunit.runner.dnx"

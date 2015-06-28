@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using Xunit;
+using Xunit.Abstractions;
 using Xunit.Runner.Dnx;
 using Xunit.Sdk;
 
@@ -13,7 +15,7 @@ public class CommandLineTests
         [Fact]
         public static void MissingAssemblyFileNameThrows()
         {
-            var exception = Record.Exception(() => CommandLine.Parse(new[] { "-teamcity" }));
+            var exception = Record.Exception(() => TestableCommandLine.Parse(new[] { "-teamcity" }));
 
             Assert.IsType<ArgumentException>(exception);
             Assert.Equal("must specify at least one assembly", exception.Message);
@@ -163,54 +165,6 @@ public class CommandLineTests
         }
     }
 
-    public class NoShadowOption
-    {
-        [Fact]
-        public static void NoShadowNotSetShadowCopyTrue()
-        {
-            var arguments = new[] { "assemblyName.dll" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            var assembly = Assert.Single(commandLine.Project.Assemblies);
-            Assert.True(assembly.ShadowCopy);
-        }
-
-        [Fact]
-        public static void NoShadowSetShadowCopyFalse()
-        {
-            var arguments = new[] { "assemblyName.dll", "-noshadow" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            var assembly = Assert.Single(commandLine.Project.Assemblies);
-            Assert.False(assembly.ShadowCopy);
-        }
-    }
-
-    public class QuietOption
-    {
-        [Fact]
-        public static void QuietNotSetQuietIsFalse()
-        {
-            var arguments = new[] { "assemblyName.dll" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            Assert.False(commandLine.Quiet);
-        }
-
-        [Fact]
-        public static void QuietSetQuietIsTrue()
-        {
-            var arguments = new[] { "assemblyName.dll", "-quiet" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            Assert.True(commandLine.Quiet);
-        }
-    }
-
     public class WaitOption
     {
         [Fact]
@@ -241,67 +195,6 @@ public class CommandLineTests
             var commandLine = TestableCommandLine.Parse(arguments);
 
             Assert.True(commandLine.Wait);
-        }
-    }
-
-    public class TeamCityArgument
-    {
-        [Fact, TeamCityEnvironmentRestore]
-        public static void TeamCityOptionNotPassedTeamCityFalse()
-        {
-            var arguments = new[] { "assemblyName.dll" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            Assert.False(commandLine.TeamCity);
-        }
-
-        [Fact, TeamCityEnvironmentRestore(Value = "TeamCity")]
-        public static void TeamCityOptionNotPassedEnvironmentSetTeamCityTrue()
-        {
-            var arguments = new[] { "assemblyName.dll" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            Assert.True(commandLine.TeamCity);
-        }
-
-        [Fact, TeamCityEnvironmentRestore]
-        public static void TeamCityOptionTeamCityTrue()
-        {
-            var arguments = new[] { "assemblyName.dll", "-teamcity" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            Assert.True(commandLine.TeamCity);
-        }
-
-        [Fact, TeamCityEnvironmentRestore]
-        public static void TeamCityOptionIgnoreCaseTeamCityTrue()
-        {
-            var arguments = new[] { "assemblyName.dll", "-tEaMcItY" };
-
-            var commandLine = TestableCommandLine.Parse(arguments);
-
-            Assert.True(commandLine.TeamCity);
-        }
-
-        class TeamCityEnvironmentRestore : BeforeAfterTestAttribute
-        {
-            string originalValue;
-
-            public string Value { get; set; }
-
-            public override void Before(MethodInfo methodUnderTest)
-            {
-                originalValue = Environment.GetEnvironmentVariable("TEAMCITY_PROJECT_NAME");
-                Environment.SetEnvironmentVariable("TEAMCITY_PROJECT_NAME", Value);
-            }
-
-            public override void After(MethodInfo methodUnderTest)
-            {
-                Environment.SetEnvironmentVariable("TEAMCITY_PROJECT_NAME", originalValue);
-            }
         }
     }
 
@@ -658,6 +551,50 @@ public class CommandLineTests
         }
     }
 
+    public class Reporters
+    {
+        [Fact]
+        public void NoReporters_UsesDefaultReporter()
+        {
+            var commandLine = TestableCommandLine.Parse("assemblyName.dll");
+
+            Assert.IsType<DefaultRunnerReporter>(commandLine.Reporter);
+        }
+
+        [Fact]
+        public void NoExplicitReporter_NoEnvironmentallyEnabledReporters_UsesDefaultReporter()
+        {
+            var implicitReporter = new MockRunnerReporter(isEnvironmentallyEnabled: false);
+
+            var commandLine = TestableCommandLine.Parse(new[] { implicitReporter }, "assemblyName.dll");
+
+            Assert.IsType<DefaultRunnerReporter>(commandLine.Reporter);
+        }
+
+        [Fact]
+        public void ExplicitReporter_UsesExplicitReporter()
+        {
+            var implicitReporter = new MockRunnerReporter(isEnvironmentallyEnabled: true);
+            var explicitReporter = new MockRunnerReporter("switch");
+
+            var commandLine = TestableCommandLine.Parse(new[] { implicitReporter, explicitReporter }, "assemblyName.dll", "-switch");
+
+            Assert.Same(explicitReporter, commandLine.Reporter);
+        }
+
+        [Fact]
+        public void NoExplicitReporter_SelectsFirstEnvironmentallyEnabledReporter()
+        {
+            var explicitReporter = new MockRunnerReporter("switch");
+            var implicitReporter1 = new MockRunnerReporter(isEnvironmentallyEnabled: true);
+            var implicitReporter2 = new MockRunnerReporter(isEnvironmentallyEnabled: true);
+
+            var commandLine = TestableCommandLine.Parse(new[] { explicitReporter, implicitReporter1, implicitReporter2 }, "assemblyName.dll");
+
+            Assert.Same(implicitReporter1, commandLine.Reporter);
+        }
+    }
+
     public class Transform
     {
         [Fact]
@@ -739,16 +676,44 @@ public class CommandLineTests
         }
     }
 
+    class MockRunnerReporter : IRunnerReporter
+    {
+        // Need this here so the runner doesn't complain that this isn't a legal runner reporter. :-p
+        public MockRunnerReporter() { }
+
+        public MockRunnerReporter(string runnerSwitch = null, bool isEnvironmentallyEnabled = false)
+        {
+            RunnerSwitch = runnerSwitch;
+            IsEnvironmentallyEnabled = isEnvironmentallyEnabled;
+        }
+
+        public string Description { get { return "The description"; } }
+
+        public bool IsEnvironmentallyEnabled { get; private set; }
+
+        public string RunnerSwitch { get; private set; }
+
+        public IMessageSink CreateMessageHandler(IRunnerLogger logger)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     class TestableCommandLine : CommandLine
     {
-        private TestableCommandLine(params string[] arguments)
-            : base(arguments)
+        private TestableCommandLine(IReadOnlyList<IRunnerReporter> reporters, params string[] arguments)
+            : base(reporters, arguments)
         {
         }
 
-        public new static TestableCommandLine Parse(params string[] arguments)
+        public static TestableCommandLine Parse(params string[] arguments)
         {
-            return new TestableCommandLine(arguments);
+            return new TestableCommandLine(new IRunnerReporter[0], arguments);
+        }
+
+        public new static TestableCommandLine Parse(IReadOnlyList<IRunnerReporter> reporters, params string[] arguments)
+        {
+            return new TestableCommandLine(reporters, arguments);
         }
     }
 }

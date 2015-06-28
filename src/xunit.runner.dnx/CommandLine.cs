@@ -1,21 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Xunit.Runner.Dnx
 {
     public class CommandLine
     {
         readonly Stack<string> arguments = new Stack<string>();
+        readonly IReadOnlyList<IRunnerReporter> reporters;
 
-        protected CommandLine(string[] args)
+        protected CommandLine(IReadOnlyList<IRunnerReporter> reporters, string[] args)
         {
+            this.reporters = reporters;
+
             for (var i = args.Length - 1; i >= 0; i--)
                 arguments.Push(args[i]);
 
-            TeamCity = Environment.GetEnvironmentVariable("TEAMCITY_PROJECT_NAME") != null;
             DesignTimeTestUniqueNames = new List<string>();
             Project = Parse();
+
+            if (Reporter == null)
+                Reporter = reporters.FirstOrDefault(r => r.IsEnvironmentallyEnabled) ?? new DefaultRunnerReporter();
         }
 
         public bool DiagnosticMessages { get; set; }
@@ -31,6 +37,8 @@ namespace Xunit.Runner.Dnx
 
         public int? MaxParallelThreads { get; set; }
 
+        public bool NoColor { get; set; }
+
         public bool NoLogo { get; set; }
 
         public XunitProject Project { get; protected set; }
@@ -39,9 +47,7 @@ namespace Xunit.Runner.Dnx
 
         public bool? ParallelizeTestCollections { get; set; }
 
-        public bool Quiet { get; set; }
-
-        public bool TeamCity { get; protected set; }
+        public IRunnerReporter Reporter { get; protected set; }
 
         public bool Wait { get; protected set; }
 
@@ -66,9 +72,9 @@ namespace Xunit.Runner.Dnx
                 throw new ArgumentException(string.Format("error: unknown command line option: {0}", option.Value));
         }
 
-        public static CommandLine Parse(params string[] args)
+        public static CommandLine Parse(IReadOnlyList<IRunnerReporter> reporters, params string[] args)
         {
-            return new CommandLine(args);
+            return new CommandLine(reporters, args);
         }
 
         protected XunitProject Parse()
@@ -99,32 +105,34 @@ namespace Xunit.Runner.Dnx
                 if (!optionName.StartsWith("-"))
                     throw new ArgumentException(string.Format("unknown command line option: {0}", option.Key));
 
-                if (optionName == "-quiet")
-                {
-                    GuardNoOptionValue(option);
-                    Quiet = true;
-                }
-                else if (optionName == "-nologo")
+                optionName = optionName.Substring(1);
+
+                if (optionName == "nologo")
                 {
                     GuardNoOptionValue(option);
                     NoLogo = true;
                 }
-                else if (optionName == "-debug")
+                else if (optionName == "nocolor")
+                {
+                    GuardNoOptionValue(option);
+                    NoColor = true;
+                }
+                else if (optionName == "debug")
                 {
                     GuardNoOptionValue(option);
                     Debug = true;
                 }
-                else if (optionName == "-wait")
+                else if (optionName == "wait")
                 {
                     GuardNoOptionValue(option);
                     Wait = true;
                 }
-                else if (optionName == "-diagnostics")
+                else if (optionName == "diagnostics")
                 {
                     GuardNoOptionValue(option);
                     DiagnosticMessages = true;
                 }
-                else if (optionName == "-maxthreads")
+                else if (optionName == "maxthreads")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -maxthreads");
@@ -148,7 +156,7 @@ namespace Xunit.Runner.Dnx
                             break;
                     }
                 }
-                else if (optionName == "-parallel")
+                else if (optionName == "parallel")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -parallel");
@@ -181,18 +189,7 @@ namespace Xunit.Runner.Dnx
                             break;
                     }
                 }
-                else if (optionName == "-teamcity")
-                {
-                    GuardNoOptionValue(option);
-                    TeamCity = true;
-                }
-                else if (optionName == "-noshadow")
-                {
-                    GuardNoOptionValue(option);
-                    foreach (var assembly in project.Assemblies)
-                        assembly.ShadowCopy = false;
-                }
-                else if (optionName == "-trait")
+                else if (optionName == "trait")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -trait");
@@ -205,7 +202,7 @@ namespace Xunit.Runner.Dnx
                     var value = pieces[1];
                     project.Filters.IncludedTraits.Add(name, value);
                 }
-                else if (optionName == "-notrait")
+                else if (optionName == "notrait")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -notrait");
@@ -218,43 +215,59 @@ namespace Xunit.Runner.Dnx
                     var value = pieces[1];
                     project.Filters.ExcludedTraits.Add(name, value);
                 }
-                else if (optionName == "-class")
+                else if (optionName == "class")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -class");
 
                     project.Filters.IncludedClasses.Add(option.Value);
                 }
-                else if (optionName == "-method")
+                else if (optionName == "method")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -method");
 
                     project.Filters.IncludedMethods.Add(option.Value);
                 }
-                else if (optionName == "-test" || optionName == "--test")
+                // BEGIN: Special command line switches for DNX <=> Visual Studio integration
+                else if (optionName == "test" || optionName == "-test")
                 {
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for --test");
 
                     DesignTimeTestUniqueNames.Add(option.Value);
                 }
-                else if (optionName == "-list" || optionName == "--list")
+                else if (optionName == "list" || optionName == "-list")
                 {
                     GuardNoOptionValue(option);
                     List = true;
                 }
-                else if (optionName == "-designtime" || optionName == "--designtime")
+                else if (optionName == "designtime" || optionName == "-designtime")
                 {
                     GuardNoOptionValue(option);
                     DesignTime = true;
                 }
+                // END: Special command line switches for DNX <=> Visual Studio integration
                 else
                 {
-                    if (option.Value == null)
-                        throw new ArgumentException(string.Format("missing filename for {0}", option.Key));
+                    // Might be a reporter...
+                    var reporter = reporters.FirstOrDefault(r => string.Equals(r.RunnerSwitch, optionName, StringComparison.OrdinalIgnoreCase));
+                    if (reporter != null)
+                    {
+                        GuardNoOptionValue(option);
+                        if (Reporter != null)
+                            throw new ArgumentException("only one reporter is allowed");
 
-                    project.Output.Add(optionName.Substring(1), option.Value);
+                        Reporter = reporter;
+                    }
+                    // ...or an result output file
+                    else
+                    {
+                        if (option.Value == null)
+                            throw new ArgumentException(string.Format("missing filename for {0}", option.Key));
+
+                        project.Output.Add(optionName, option.Value);
+                    }
                 }
             }
 
