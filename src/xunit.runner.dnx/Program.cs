@@ -171,7 +171,7 @@ namespace Xunit.Runner.Dnx
 
             foreach (var transform in TransformFactory.AvailableTransforms)
                 Console.WriteLine("  {0} : {1}",
-                                  String.Format("-{0} <filename>", transform.CommandLine).PadRight(22).Substring(0, 22),
+                                  string.Format("-{0} <filename>", transform.CommandLine).PadRight(22).Substring(0, 22),
                                   transform.Description);
         }
 
