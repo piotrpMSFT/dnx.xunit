@@ -88,8 +88,8 @@ namespace Xunit.Runner.Dnx
                     PrintHeader();
 
                 var failCount = RunProject(commandLine.Project, commandLine.ParallelizeAssemblies, commandLine.ParallelizeTestCollections,
-                                           commandLine.MaxParallelThreads, commandLine.DiagnosticMessages, commandLine.DesignTime,
-                                           commandLine.List, commandLine.DesignTimeTestUniqueNames);
+                                           commandLine.MaxParallelThreads, commandLine.DiagnosticMessages, commandLine.NoColor,
+                                           commandLine.DesignTime, commandLine.List, commandLine.DesignTimeTestUniqueNames);
 
                 if (commandLine.Wait)
                 {
@@ -163,10 +163,7 @@ namespace Xunit.Runner.Dnx
                         var ctor = type.GetConstructor(new Type[0]);
                         if (ctor == null)
                         {
-                            // TODO: NoColor
-                            Console.ForegroundColor = ConsoleColor.Yellow;
                             Console.WriteLine("Type {0} in assembly {1} appears to be a runner reporter, but does not have an empty constructor.", type.FullName, assembly.Name);
-                            Console.ResetColor();
                             continue;
                         }
 
@@ -242,6 +239,7 @@ namespace Xunit.Runner.Dnx
                        bool? parallelizeTestCollections,
                        int? maxThreadCount,
                        bool diagnosticMessages,
+                       bool noColor,
                        bool designTime,
                        bool list,
                        IReadOnlyList<string> designTimeFullyQualifiedNames)
@@ -266,7 +264,7 @@ namespace Xunit.Runner.Dnx
 
                 if (parallelizeAssemblies.GetValueOrDefault())
                 {
-                    var tasks = project.Assemblies.Select(assembly => TaskRun(() => ExecuteAssembly(consoleLock, assembly, needsXml, parallelizeTestCollections, maxThreadCount, diagnosticMessages, project.Filters, designTime, list, designTimeFullyQualifiedNames)));
+                    var tasks = project.Assemblies.Select(assembly => TaskRun(() => ExecuteAssembly(consoleLock, assembly, needsXml, parallelizeTestCollections, maxThreadCount, diagnosticMessages, noColor, project.Filters, designTime, list, designTimeFullyQualifiedNames)));
                     var results = Task.WhenAll(tasks).GetAwaiter().GetResult();
                     foreach (var assemblyElement in results.Where(result => result != null))
                         assembliesElement.Add(assemblyElement);
@@ -275,7 +273,7 @@ namespace Xunit.Runner.Dnx
                 {
                     foreach (var assembly in project.Assemblies)
                     {
-                        var assemblyElement = ExecuteAssembly(consoleLock, assembly, needsXml, parallelizeTestCollections, maxThreadCount, diagnosticMessages, project.Filters, designTime, list, designTimeFullyQualifiedNames);
+                        var assemblyElement = ExecuteAssembly(consoleLock, assembly, needsXml, parallelizeTestCollections, maxThreadCount, diagnosticMessages, noColor, project.Filters, designTime, list, designTimeFullyQualifiedNames);
                         if (assemblyElement != null)
                             assembliesElement.Add(assemblyElement);
                     }
@@ -301,6 +299,7 @@ namespace Xunit.Runner.Dnx
                                  bool? parallelizeTestCollections,
                                  int? maxThreadCount,
                                  bool diagnosticMessages,
+                                 bool noColor,
                                  XunitFilters filters,
                                  bool designTime,
                                  bool listTestCases,
@@ -328,7 +327,7 @@ namespace Xunit.Runner.Dnx
                     executionOptions.SetDisableParallelization(!parallelizeTestCollections.GetValueOrDefault());
 
                 var assemblyDisplayName = Path.GetFileNameWithoutExtension(assembly.AssemblyFilename);
-                var diagnosticMessageVisitor = new DiagnosticMessageVisitor(consoleLock, assemblyDisplayName, assembly.Configuration.DiagnosticMessagesOrDefault);
+                var diagnosticMessageVisitor = new DiagnosticMessageVisitor(consoleLock, assemblyDisplayName, assembly.Configuration.DiagnosticMessagesOrDefault, noColor);
                 var sourceInformationProvider = new SourceInformationProviderAdapater(services);
 
                 using (var controller = new XunitFrontController(assembly.AssemblyFilename, assembly.ConfigFilename, assembly.ShadowCopy, diagnosticMessageSink: diagnosticMessageVisitor, sourceInformationProvider: sourceInformationProvider))

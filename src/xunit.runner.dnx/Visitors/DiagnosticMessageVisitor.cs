@@ -7,10 +7,12 @@ namespace Xunit.Runner.Dnx
     {
         readonly string assemblyDisplayName;
         readonly object consoleLock;
+        readonly bool noColor;
         readonly bool showDiagnostics;
 
-        public DiagnosticMessageVisitor(object consoleLock, string assemblyDisplayName, bool showDiagnostics)
+        public DiagnosticMessageVisitor(object consoleLock, string assemblyDisplayName, bool showDiagnostics, bool noColor)
         {
+            this.noColor = noColor;
             this.consoleLock = consoleLock;
             this.assemblyDisplayName = assemblyDisplayName;
             this.showDiagnostics = showDiagnostics;
@@ -21,9 +23,13 @@ namespace Xunit.Runner.Dnx
             if (showDiagnostics)
                 lock (consoleLock)
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    if (!noColor)
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+
                     Console.WriteLine("   {0}: {1}", assemblyDisplayName, diagnosticMessage.Message);
-                    Console.ForegroundColor = ConsoleColor.Gray;
+
+                    if (!noColor)
+                        Console.ForegroundColor = ConsoleColor.Gray;
                 }
 
             return base.Visit(diagnosticMessage);
