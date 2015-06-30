@@ -20,7 +20,7 @@ echo ""
 echo "Restoring packages..."
 echo ""
 
-dnvm use 1.0.0-beta6-12120 -u
+dnvm use 1.0.0-beta6-12120
 dnu restore
 if [ $? -ne 0 ]; then
   echo >&2 "Package restore has failed."

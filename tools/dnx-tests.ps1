@@ -11,3 +11,11 @@ if ($LastExitCode -ne 0) { exit 1 }
 & $dnvm use $dnxVersion -runtime CoreCLR -arch x86
 & dnx $(join-path $solutionPath "test\test.xunit.runner.dnx") test -diagnostics
 if ($LastExitCode -ne 0) { exit 1 }
+
+& $dnvm use $dnxVersion -runtime CLR -arch x64
+& dnx $(join-path $solutionPath "test\test.xunit.runner.dnx") test -diagnostics
+if ($LastExitCode -ne 0) { exit 1 }
+
+& $dnvm use $dnxVersion -runtime CoreCLR -arch x64
+& dnx $(join-path $solutionPath "test\test.xunit.runner.dnx") test -diagnostics
+if ($LastExitCode -ne 0) { exit 1 }

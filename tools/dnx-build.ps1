@@ -6,6 +6,8 @@ $dnxVersion = (ConvertFrom-JSON ([System.IO.File]::ReadAllText($globalJson))).sd
 
 & $dnvm install $dnxVersion -runtime CoreCLR -arch x86 -u
 & $dnvm install $dnxVersion -runtime CLR -arch x86 -u
+& $dnvm install $dnxVersion -runtime CoreCLR -arch x64 -u
+& $dnvm install $dnxVersion -runtime CLR -arch x64 -u
 & $dnvm use $dnxVersion -runtime CLR -arch x86
 
 # Update build number during CI
