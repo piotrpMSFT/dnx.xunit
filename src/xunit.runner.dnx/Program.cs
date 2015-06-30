@@ -140,27 +140,25 @@ namespace Xunit.Runner.Dnx
             foreach (var library in libraryManager.GetReferencingLibraries("xunit.runner.utility"))
                 foreach (var assembly in library.LoadableAssemblies)
                 {
-                    Type[] types;
+                    TypeInfo[] types;
 
                     try
                     {
                         var assm = Assembly.Load(assembly);
-                        types = assm.GetTypes();
-                    }
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        types = ex.Types;
+                        types = assm.DefinedTypes.ToArray();
                     }
                     catch
                     {
                         continue;
                     }
 
+                    var defaultRunnerReporterType = typeof(DefaultRunnerReporter).GetTypeInfo();
+
                     foreach (var type in types)
                     {
-                        if (type == null || type.GetTypeInfo().IsAbstract || type == typeof(DefaultRunnerReporter) || !type.GetInterfaces().Any(t => t == typeof(IRunnerReporter)))
+                        if (type == null || type.IsAbstract || type == defaultRunnerReporterType || !type.ImplementedInterfaces.Any(t => t == typeof(IRunnerReporter)))
                             continue;
-                        var ctor = type.GetConstructor(new Type[0]);
+                        var ctor = type.DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
                         if (ctor == null)
                         {
                             Console.WriteLine("Type {0} in assembly {1} appears to be a runner reporter, but does not have an empty constructor.", type.FullName, assembly.Name);
@@ -259,7 +257,6 @@ namespace Xunit.Runner.Dnx
 
             using (AssemblyHelper.SubscribeResolve())
             {
-
                 var clockTime = Stopwatch.StartNew();
 
                 if (parallelizeAssemblies.GetValueOrDefault())

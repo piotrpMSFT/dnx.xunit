@@ -1,4 +1,4 @@
 {
-    "sdk": { "version": "1.0.0-beta5-12103" },
+    "sdk": { "version": "1.0.0-beta5" },
     "sources": [ "src" ]
 }
