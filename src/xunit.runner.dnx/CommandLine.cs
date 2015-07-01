@@ -19,9 +19,7 @@ namespace Xunit.Runner.Dnx
 
             DesignTimeTestUniqueNames = new List<string>();
             Project = Parse();
-
-            if (Reporter == null)
-                Reporter = reporters.FirstOrDefault(r => r.IsEnvironmentallyEnabled) ?? new DefaultRunnerReporter();
+            Reporter = reporters.FirstOrDefault(r => r.IsEnvironmentallyEnabled) ?? Reporter ?? new DefaultRunnerReporter();
         }
 
         public bool DiagnosticMessages { get; set; }
