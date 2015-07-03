@@ -6,7 +6,7 @@ using VsTestCase = Microsoft.Framework.TestAdapter.Test;
 
 namespace Xunit.Runner.Dnx
 {
-    public class DesignTimeExecutionVisitor : TestMessageVisitor<ITestAssemblyFinished>
+    public class DesignTimeExecutionVisitor : TestMessageVisitor<ITestAssemblyFinished>, IExecutionVisitor
     {
         private readonly ITestExecutionSink _sink;
         private readonly IDictionary<ITestCase, VsTestCase> _conversions;
@@ -17,7 +17,11 @@ namespace Xunit.Runner.Dnx
             _sink = sink;
             _conversions = conversions;
             _next = next;
+
+            ExecutionSummary = new ExecutionSummary();
         }
+
+        public ExecutionSummary ExecutionSummary { get; private set; }
 
         protected override bool Visit(ITestStarting testStarting)
         {
@@ -72,6 +76,21 @@ namespace Xunit.Runner.Dnx
             }
 
             return true;
+        }
+
+        protected override bool Visit(ITestAssemblyFinished assemblyFinished)
+        {
+            var result = base.Visit(assemblyFinished);
+
+            ExecutionSummary = new ExecutionSummary
+            {
+                Failed = assemblyFinished.TestsFailed,
+                Skipped = assemblyFinished.TestsSkipped,
+                Time = assemblyFinished.ExecutionTime,
+                Total = assemblyFinished.TestsRun
+            };
+
+            return result;
         }
 
         public override bool OnMessage(IMessageSinkMessage message)

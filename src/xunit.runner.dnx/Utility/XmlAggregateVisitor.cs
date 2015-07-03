@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Xunit
 {
-    public class XmlAggregateVisitor : XmlTestExecutionVisitor
+    public class XmlAggregateVisitor : XmlTestExecutionVisitor, IExecutionVisitor
     {
         readonly ConcurrentDictionary<string, ExecutionSummary> completionMessages;
         readonly IMessageSink innerMessageSink;
@@ -19,21 +19,27 @@ namespace Xunit
         {
             this.innerMessageSink = innerMessageSink;
             this.completionMessages = completionMessages;
+
+            ExecutionSummary = new ExecutionSummary();
         }
+
+        public ExecutionSummary ExecutionSummary { get; private set; }
 
         protected override bool Visit(ITestAssemblyFinished assemblyFinished)
         {
             var result = base.Visit(assemblyFinished);
 
+            ExecutionSummary = new ExecutionSummary
+            {
+                Total = assemblyFinished.TestsRun,
+                Failed = assemblyFinished.TestsFailed,
+                Skipped = assemblyFinished.TestsSkipped,
+                Time = assemblyFinished.ExecutionTime,
+                Errors = Errors
+            };
+
             if (completionMessages != null)
-                completionMessages.TryAdd(Path.GetFileNameWithoutExtension(assemblyFinished.TestAssembly.Assembly.AssemblyPath), new ExecutionSummary
-                {
-                    Total = assemblyFinished.TestsRun,
-                    Failed = assemblyFinished.TestsFailed,
-                    Skipped = assemblyFinished.TestsSkipped,
-                    Time = assemblyFinished.ExecutionTime,
-                    Errors = Errors
-                });
+                completionMessages.TryAdd(Path.GetFileNameWithoutExtension(assemblyFinished.TestAssembly.Assembly.AssemblyPath), ExecutionSummary);
 
             return result;
         }

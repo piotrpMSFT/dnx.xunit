@@ -333,7 +333,7 @@ namespace Xunit.Runner.Dnx
                     var includeSourceInformation = designTime && listTestCases;
 
                     // Discover & filter the tests
-                    reporterMessageHandler.OnMessage(new TestAssemblyDiscoveryStarting(assembly, discoveryOptions, executionOptions));
+                    reporterMessageHandler.OnMessage(new TestAssemblyDiscoveryStarting(assembly, discoveryOptions));
 
                     controller.Find(includeSourceInformation: includeSourceInformation, messageSink: discoveryVisitor, discoveryOptions: discoveryOptions);
                     discoveryVisitor.Finished.WaitOne();
@@ -368,7 +368,7 @@ namespace Xunit.Runner.Dnx
                         return assemblyElement;
                     }
 
-                    TestMessageVisitor<ITestAssemblyFinished> resultsVisitor;
+                    IExecutionVisitor resultsVisitor;
 
                     if (designTime)
                     {
@@ -386,14 +386,18 @@ namespace Xunit.Runner.Dnx
                         filteredTestCases = vsTestCases.Where(t => designTimeFullyQualifiedNames.Contains(t.Value.FullyQualifiedName)).Select(t => t.Key).ToList();
                     var testCasesToRun = filteredTestCases.Count;
 
-                    reporterMessageHandler.OnMessage(new TestAssemblyDiscoveryFinished(assembly, discoveryOptions, executionOptions, testCasesDiscovered, testCasesToRun));
+                    reporterMessageHandler.OnMessage(new TestAssemblyDiscoveryFinished(assembly, discoveryOptions, testCasesDiscovered, testCasesToRun));
 
                     if (filteredTestCases.Count == 0)
                         completionMessages.TryAdd(Path.GetFileName(assembly.AssemblyFilename), new ExecutionSummary());
                     else
                     {
+                        reporterMessageHandler.OnMessage(new TestAssemblyExecutionStarting(assembly, executionOptions));
+
                         controller.RunTests(filteredTestCases, resultsVisitor, executionOptions);
                         resultsVisitor.Finished.WaitOne();
+
+                        reporterMessageHandler.OnMessage(new TestAssemblyExecutionFinished(assembly, executionOptions, resultsVisitor.ExecutionSummary));
                     }
                 }
             }
