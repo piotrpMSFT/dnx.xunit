@@ -10,15 +10,18 @@ namespace Xunit.Runner.Dnx
         readonly Stack<string> arguments = new Stack<string>();
         readonly IReadOnlyList<IRunnerReporter> reporters;
 
-        protected CommandLine(IReadOnlyList<IRunnerReporter> reporters, string[] args)
+        protected CommandLine(IReadOnlyList<IRunnerReporter> reporters, string[] args, Predicate<string> fileExists = null)
         {
             this.reporters = reporters;
+
+            if (fileExists == null)
+                fileExists = fileName => File.Exists(fileName);
 
             for (var i = args.Length - 1; i >= 0; i--)
                 arguments.Push(args[i]);
 
             DesignTimeTestUniqueNames = new List<string>();
-            Project = Parse();
+            Project = Parse(fileExists);
             Reporter = reporters.FirstOrDefault(r => r.IsEnvironmentallyEnabled) ?? Reporter ?? new DefaultRunnerReporter();
         }
 
@@ -75,24 +78,25 @@ namespace Xunit.Runner.Dnx
             return new CommandLine(reporters, args);
         }
 
-        protected XunitProject Parse()
+        protected XunitProject Parse(Predicate<string> fileExists)
         {
-            var assemblies = new List<Tuple<string, string>>();
-
-            while (arguments.Count > 0)
-            {
-                if (arguments.Peek().StartsWith("-"))
-                    break;
-
-                var assemblyFile = arguments.Pop();
-                string configFile = null;
-
-                assemblies.Add(Tuple.Create(assemblyFile, configFile));
-            }
-
-            if (assemblies.Count == 0)
+            if (arguments.Count == 0)
                 throw new ArgumentException("must specify at least one assembly");
 
+            var assemblyFile = arguments.Pop();
+            string configFile = null;
+            if (arguments.Count > 0)
+            {
+                var value = arguments.Peek();
+                if (!value.StartsWith("-") && value.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    configFile = arguments.Pop();
+                    if (!fileExists(configFile))
+                        throw new ArgumentException(string.Format("config file not found: {0}", configFile));
+                }
+            }
+
+            var assemblies = new List<Tuple<string, string>> { Tuple.Create(assemblyFile, configFile) };
             var project = GetProjectFile(assemblies);
 
             while (arguments.Count > 0)

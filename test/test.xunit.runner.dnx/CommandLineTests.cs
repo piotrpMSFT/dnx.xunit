@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Runner.Dnx;
-using Xunit.Sdk;
 
 public class CommandLineTests
 {
@@ -15,33 +13,21 @@ public class CommandLineTests
         [Fact]
         public static void MissingAssemblyFileNameThrows()
         {
-            var exception = Record.Exception(() => TestableCommandLine.Parse(new[] { "-teamcity" }));
+            var exception = Record.Exception(() => TestableCommandLine.Parse());
 
             Assert.IsType<ArgumentException>(exception);
             Assert.Equal("must specify at least one assembly", exception.Message);
         }
 
         [Fact]
-        public static void MultipleAssembliesDoesNotThrow()
+        public static void ConfigFileDoesNotExist_Throws()
         {
-            var arguments = new[] { "assemblyName.dll", "assemblyName2.dll" };
+            var arguments = new[] { "assemblyName.dll", "badConfig.json" };
 
-            var result = TestableCommandLine.Parse(arguments);
+            var exception = Record.Exception(() => TestableCommandLine.Parse(arguments));
 
-            Assert.Collection(result.Project,
-                a =>
-                {
-                    Assert.Equal(Path.GetFullPath("assemblyName.dll"), a.AssemblyFilename);
-                    Assert.Null(a.ConfigFilename);
-                    Assert.True(a.ShadowCopy);
-                },
-                a =>
-                {
-                    Assert.Equal(Path.GetFullPath("assemblyName2.dll"), a.AssemblyFilename);
-                    Assert.Null(a.ConfigFilename);
-                    Assert.True(a.ShadowCopy);
-                }
-            );
+            Assert.IsType<ArgumentException>(exception);
+            Assert.Equal("config file not found: badConfig.json", exception.Message);
         }
     }
 
@@ -712,7 +698,7 @@ public class CommandLineTests
     class TestableCommandLine : CommandLine
     {
         private TestableCommandLine(IReadOnlyList<IRunnerReporter> reporters, params string[] arguments)
-            : base(reporters, arguments)
+            : base(reporters, arguments, filename => filename != "badConfig.json")
         {
         }
 
