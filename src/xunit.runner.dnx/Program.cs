@@ -40,7 +40,7 @@ namespace Xunit.Runner.Dnx
         [STAThread]
         public int Main(string[] args)
         {
-            args = Enumerable.Repeat(appEnv.ApplicationName + ".dll", 1).Concat(args).ToArray();
+            args = Enumerable.Repeat(Path.Combine(appEnv.ApplicationBasePath, appEnv.ApplicationName + ".dll"), 1).Concat(args).ToArray();
 
             try
             {

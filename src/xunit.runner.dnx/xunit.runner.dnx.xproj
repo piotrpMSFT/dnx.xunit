@@ -12,6 +12,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
   </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <RootNamespace>Xunit.Runner.Dnx</RootNamespace>
+  </PropertyGroup>
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
