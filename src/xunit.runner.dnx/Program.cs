@@ -345,7 +345,7 @@ namespace Xunit.Runner.Dnx
                     var includeSourceInformation = designTime && listTestCases;
 
                     // Discover & filter the tests
-                    reporterMessageHandler.OnMessage(new TestAssemblyDiscoveryStarting(assembly, discoveryOptions));
+                    reporterMessageHandler.OnMessage(new TestAssemblyDiscoveryStarting(assembly, false, discoveryOptions));
 
                     controller.Find(includeSourceInformation: includeSourceInformation, messageSink: discoveryVisitor, discoveryOptions: discoveryOptions);
                     discoveryVisitor.Finished.WaitOne();
