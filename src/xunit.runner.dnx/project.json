@@ -41,9 +41,9 @@
         }
     },
     "dependencies": {
-        "Microsoft.Framework.Runtime.Abstractions": "1.0.0-beta6-*",
-        "Microsoft.Framework.TestAdapter": "1.0.0-beta6-*",
-        "Microsoft.Framework.TestHost": "1.0.0-beta6-*",
+        "Microsoft.Framework.Runtime.Abstractions": "1.0.0-beta6",
+        "Microsoft.Framework.TestAdapter": "1.0.0-beta6",
+        "Microsoft.Framework.TestHost": "1.0.0-beta6",
         "xunit.runner.utility": "2.1.0-beta4-*",
         "xunit.runner.reporters": "2.1.0-beta4-*"
     }
