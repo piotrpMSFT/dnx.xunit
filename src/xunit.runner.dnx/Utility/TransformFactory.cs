@@ -29,6 +29,11 @@ namespace Xunit.Runner.Dnx
 
         static void Handler_DirectWrite(XElement xml, string outputFileName)
         {
+            // Create the output parent directories if they don't exist.
+            int lastSlashIdx = outputFileName.LastIndexOf('/');
+            if (lastSlashIdx != -1)
+                Directory.CreateDirectory(outputFileName.Substring(0, lastSlashIdx));
+
             using (var stream = File.Open(outputFileName, FileMode.Create))
                 xml.Save(stream);
         }
