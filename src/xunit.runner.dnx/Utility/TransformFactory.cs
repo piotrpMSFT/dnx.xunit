@@ -29,7 +29,7 @@ namespace Xunit.Runner.Dnx
 
         static void Handler_DirectWrite(XElement xml, string outputFileName)
         {
-            using (var stream = File.OpenWrite(outputFileName))
+            using (var stream = File.Open(outputFileName, FileMode.Create))
                 xml.Save(stream);
         }
     }
