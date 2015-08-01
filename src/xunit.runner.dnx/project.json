@@ -1,7 +1,7 @@
 ﻿{
     "authors": [ "James Newkirk", "Brad Wilson" ],
     "title": "xUnit.net [Runner: DNX / DNX Core]",
-    "description": "Console and Visual Studio runner for xUnit.net. Supported platforms: DNX 4.5.1+, DNX Core 5+",
+    "description": "Console and Visual Studio runner for xUnit.net.\r\n\r\nSupported platforms:\r\n- DNX 4.6\r\n- DNX Core 5+",
     "projectUrl": "https://github.com/xunit/dnx.xunit",
     "iconUrl": "https://raw.githubusercontent.com/xunit/media/master/logo-512-transparent.png",
     "licenseUrl": "https://raw.githubusercontent.com/xunit/xunit/master/license.txt",
@@ -11,32 +11,14 @@
         "warningsAsErrors": true
     },
     "frameworks": {
-        "dnx451": {
+        "dnx46": {
             "frameworkAssemblies": {
-                "System.Collections": "",
-                "System.ObjectModel": "",
-                "System.Reflection": "",
-                "System.Runtime": "",
-                "System.Text.RegularExpressions": "",
-                "System.Xml": "",
-                "System.Xml.Linq": ""
+                "System.Threading": ""
             }
         },
         "dnxcore50": {
             "dependencies": {
-                "System.Collections.Concurrent": "4.0.10-beta-*",
-                "System.Console": "4.0.0-beta-*",
-                "System.Diagnostics.Tools": "4.0.0-beta-*",
-                "System.IO.FileSystem": "4.0.0-beta-*",
-                "System.Linq": "4.0.0-beta-*",
-                "System.ObjectModel": "4.0.10-beta-*",
-                "System.Reflection": "4.0.10-beta-*",
-                "System.Runtime.Extensions": "4.0.10-beta-*",
-                "System.Security.Cryptography.Hashing": "4.0.0-beta-*",
-                "System.Security.Cryptography.Hashing.Algorithms": "4.0.0-beta-*",
-                "System.Text.RegularExpressions": "4.0.10-beta-*",
-                "System.Threading": "4.0.10-beta-*",
-                "System.Xml.XDocument": "4.0.0-beta-*"
+                "System.Security.Cryptography.Hashing.Algorithms": "4.0.0-beta-*"
             }
         }
     },
