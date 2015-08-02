@@ -32,17 +32,9 @@ internal static class Guard
             throw new ArgumentException(message, argName);
     }
 
-#if !XUNIT_CORE_DLL
     /// <summary/>
     [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "This method may not be called by all users of Guard.")]
     public static void FileExists(string argName, string fileName)
     {
-#if !ANDROID && !DNX46 && !DNXCORE50
-        Guard.ArgumentNotNullOrEmpty(argName, fileName);
-        Guard.ArgumentValid("assemblyFileName",
-                            string.Format("File not found: {0}", fileName),
-                            File.Exists(fileName));
-#endif
     }
-#endif
 }

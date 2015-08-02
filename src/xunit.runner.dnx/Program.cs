@@ -35,6 +35,8 @@ namespace Xunit.Runner.Dnx
             this.services = services;
             this.libraryManager = libraryManager;
             this.shutdown = shutdown;
+
+            ConfigReader_Json.FileOpenRead = File.OpenRead;
         }
 
         [STAThread]

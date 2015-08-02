@@ -1,7 +1,7 @@
 ﻿{
     "authors": [ "James Newkirk", "Brad Wilson" ],
     "title": "xUnit.net [Runner: DNX / DNX Core]",
-    "description": "Console and Visual Studio runner for xUnit.net.\r\n\r\nSupported platforms:\r\n- DNX 4.6\r\n- DNX Core 5+",
+    "description": "Console and Visual Studio runner for xUnit.net.\r\n\r\nSupported platforms:\r\n- DNX 4.5.1\r\n- DNX Core 5+",
     "projectUrl": "https://github.com/xunit/dnx.xunit",
     "iconUrl": "https://raw.githubusercontent.com/xunit/media/master/logo-512-transparent.png",
     "licenseUrl": "https://raw.githubusercontent.com/xunit/xunit/master/license.txt",
@@ -11,7 +11,7 @@
         "warningsAsErrors": true
     },
     "frameworks": {
-        "dnx46": {
+        "dnx451": {
             "frameworkAssemblies": {
                 "System.Threading": ""
             }
