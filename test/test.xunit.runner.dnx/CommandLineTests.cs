@@ -76,6 +76,7 @@ public class CommandLineTests
         }
     }
 
+#if false
     public class MaxThreadsOption
     {
         [Fact]
@@ -126,6 +127,7 @@ public class CommandLineTests
             Assert.Equal(16, commandLine.MaxParallelThreads);
         }
     }
+#endif
 
     public class NoLogoOption
     {

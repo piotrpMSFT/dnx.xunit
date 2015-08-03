@@ -139,6 +139,7 @@ namespace Xunit.Runner.Dnx
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -maxthreads");
 
+#if false
                     switch (option.Value)
                     {
                         case "default":
@@ -157,6 +158,11 @@ namespace Xunit.Runner.Dnx
                             MaxParallelThreads = threadValue;
                             break;
                     }
+#else
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Warning: The -maxthreads option is currently ignored");
+                    Console.ResetColor();
+#endif
                 }
                 else if (optionName == "parallel")
                 {
