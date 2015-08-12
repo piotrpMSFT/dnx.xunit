@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Framework.TestAdapter;
+using Microsoft.Dnx.TestAdapter;
 using Xunit.Abstractions;
-using VsTestCase = Microsoft.Framework.TestAdapter.Test;
+using VsTestCase = Microsoft.Dnx.TestAdapter.Test;
 
 namespace Xunit.Runner.Dnx
 {

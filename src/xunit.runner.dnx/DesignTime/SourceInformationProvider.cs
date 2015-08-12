@@ -1,6 +1,6 @@
 ﻿using System;
 using Xunit.Abstractions;
-using TestHostSourceInformationProvider = Microsoft.Framework.TestAdapter.ISourceInformationProvider;
+using TestHostSourceInformationProvider = Microsoft.Dnx.TestAdapter.ISourceInformationProvider;
 
 namespace Xunit.Runner.Dnx
 {
@@ -20,10 +20,11 @@ namespace Xunit.Runner.Dnx
             if (provider == null)
                 return null;
 
-            var innerInformation = provider.GetSourceInformation(
-                testCase.TestMethod.TestClass.Class.Name,
-                testCase.TestMethod.Method.Name);
+            var reflectionMethodInfo = testCase.TestMethod.Method as IReflectionMethodInfo;
+            if (reflectionMethodInfo == null)
+                return null;
 
+            var innerInformation = provider.GetSourceInformation(reflectionMethodInfo.MethodInfo);
             if (innerInformation == null)
                 return null;
 

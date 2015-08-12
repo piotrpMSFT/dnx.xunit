@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Xunit.Abstractions;
-using VsTestCase = Microsoft.Framework.TestAdapter.Test;
+using VsTestCase = Microsoft.Dnx.TestAdapter.Test;
 
 namespace Xunit.Runner.Dnx
 {

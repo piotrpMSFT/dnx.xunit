@@ -8,10 +8,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Microsoft.Framework.Runtime;
-using Microsoft.Framework.TestAdapter;
+using Microsoft.Dnx.Runtime;
+using Microsoft.Dnx.TestAdapter;
 using Xunit.Abstractions;
-using VsTestCase = Microsoft.Framework.TestAdapter.Test;
+using VsTestCase = Microsoft.Dnx.TestAdapter.Test;
 
 namespace Xunit.Runner.Dnx
 {
@@ -152,7 +152,7 @@ namespace Xunit.Runner.Dnx
             var result = new List<IRunnerReporter>();
 
             foreach (var library in libraryManager.GetReferencingLibraries("xunit.runner.utility"))
-                foreach (var assembly in library.LoadableAssemblies)
+                foreach (var assembly in library.Assemblies)
                 {
                     TypeInfo[] types;
 

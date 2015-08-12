@@ -4,7 +4,7 @@
         "dnxcore50": { }
     },
     "dependencies": {
-        "xunit": "2.1.0-beta4-*",
+        "xunit": "2.1.0-rc1-*",
         "xunit.runner.dnx": ""
     },
     "commands": {
