@@ -20,6 +20,8 @@ namespace Xunit.Runner.Dnx
             for (var i = args.Length - 1; i >= 0; i--)
                 arguments.Push(args[i]);
 
+            // HACK: This is only here because -maxthreads is currently disabled
+            MaxParallelThreads = -1;
             DesignTimeTestUniqueNames = new List<string>();
             Project = Parse(fileExists);
             Reporter = reporters.FirstOrDefault(r => r.IsEnvironmentallyEnabled) ?? Reporter ?? new DefaultRunnerReporter();
@@ -143,11 +145,11 @@ namespace Xunit.Runner.Dnx
                     switch (option.Value)
                     {
                         case "default":
-                            MaxParallelThreads = null;
+                            MaxParallelThreads = 0;
                             break;
 
                         case "unlimited":
-                            MaxParallelThreads = 0;
+                            MaxParallelThreads = -1;
                             break;
 
                         default:
