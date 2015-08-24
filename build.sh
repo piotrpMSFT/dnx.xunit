@@ -40,7 +40,7 @@ fi
 echo ""
 echo "Running tests..."
 echo ""
-dnx test/test.xunit.runner.dnx test -parallel none
+dnx -p test/test.xunit.runner.dnx test -parallel none
 if [ $? -ne 0 ]; then
   echo >&2 "Running tests has failed."
   exit 1
