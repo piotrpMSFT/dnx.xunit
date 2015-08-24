@@ -86,7 +86,7 @@ Set-Variable -Option Constant "OldUserDirectoryNames" @(".kre", ".k")
 Set-Variable -Option Constant "RuntimePackageName" "dnx"
 Set-Variable -Option Constant "DefaultFeed" "https://www.nuget.org/api/v2"
 Set-Variable -Option Constant "DefaultFeedKey" "DNX_FEED"
-Set-Variable -Option Constant "DefaultUnstableFeed" "https://www.myget.org/F/aspnetvnext/api/v2"
+Set-Variable -Option Constant "DefaultUnstableFeed" "https://www.myget.org/F/aspnetrelease/api/v2"
 Set-Variable -Option Constant "DefaultUnstableFeedKey" "DNX_UNSTABLE_FEED"
 Set-Variable -Option Constant "CrossGenCommand" "dnx-crossgen"
 Set-Variable -Option Constant "OldCrossGenCommand" "k-crossgen"

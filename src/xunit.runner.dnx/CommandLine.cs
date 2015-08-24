@@ -20,8 +20,6 @@ namespace Xunit.Runner.Dnx
             for (var i = args.Length - 1; i >= 0; i--)
                 arguments.Push(args[i]);
 
-            // HACK: This is only here because -maxthreads is currently disabled
-            MaxParallelThreads = -1;
             DesignTimeTestUniqueNames = new List<string>();
             Project = Parse(fileExists);
             Reporter = reporters.FirstOrDefault(r => r.IsEnvironmentallyEnabled) ?? Reporter ?? new DefaultRunnerReporter();
@@ -141,7 +139,6 @@ namespace Xunit.Runner.Dnx
                     if (option.Value == null)
                         throw new ArgumentException("missing argument for -maxthreads");
 
-#if false
                     switch (option.Value)
                     {
                         case "default":
@@ -154,17 +151,12 @@ namespace Xunit.Runner.Dnx
 
                         default:
                             int threadValue;
-                            if (!int.TryParse(option.Value, out threadValue) || threadValue < 0)
+                            if (!int.TryParse(option.Value, out threadValue) || threadValue < 1)
                                 throw new ArgumentException("incorrect argument value for -maxthreads (must be 'default', 'unlimited', or a positive number)");
 
                             MaxParallelThreads = threadValue;
                             break;
                     }
-#else
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("Warning: The -maxthreads option is currently ignored");
-                    Console.ResetColor();
-#endif
                 }
                 else if (optionName == "parallel")
                 {

@@ -35,8 +35,6 @@ namespace Xunit.Runner.Dnx
             this.services = services;
             this.libraryManager = libraryManager;
             this.shutdown = shutdown;
-
-            ConfigReader_Json.FileOpenRead = File.OpenRead;
         }
 
         [STAThread]
@@ -206,12 +204,10 @@ namespace Xunit.Runner.Dnx
             Console.WriteLine("                         :   collections - only parallelize collections");
             Console.WriteLine("                         :   assemblies - only parallelize assemblies");
             Console.WriteLine("                         :   all - parallelize collections and assemblies");
-#if false
             Console.WriteLine("  -maxthreads count      : maximum thread count for collection parallelization");
             Console.WriteLine("                         :   default   - run with default (1 thread per CPU thread)");
             Console.WriteLine("                         :   unlimited - run with unbounded thread count");
             Console.WriteLine("                         :   (number)  - limit task thread pool size to 'count'");
-#endif
             Console.WriteLine("  -wait                  : wait for input after completion");
             Console.WriteLine("  -diagnostics           : enable diagnostics messages for all test assemblies");
 #if !DNXCORE50
@@ -343,7 +339,7 @@ namespace Xunit.Runner.Dnx
                 var diagnosticMessageVisitor = new DiagnosticMessageVisitor(consoleLock, assemblyDisplayName, assembly.Configuration.DiagnosticMessagesOrDefault, noColor);
                 var sourceInformationProvider = new SourceInformationProviderAdapater(services);
 
-                using (var controller = new XunitFrontController(/* useAppDomain */ false, assembly.AssemblyFilename, assembly.ConfigFilename, assembly.ShadowCopy, diagnosticMessageSink: diagnosticMessageVisitor, sourceInformationProvider: sourceInformationProvider))
+                using (var controller = new XunitFrontController(AppDomainSupport.Denied, assembly.AssemblyFilename, assembly.ConfigFilename, assembly.ShadowCopy, diagnosticMessageSink: diagnosticMessageVisitor, sourceInformationProvider: sourceInformationProvider))
                 using (var discoveryVisitor = new TestDiscoveryVisitor())
                 {
                     var includeSourceInformation = designTime && listTestCases;

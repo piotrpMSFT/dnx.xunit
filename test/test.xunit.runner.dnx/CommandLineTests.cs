@@ -78,7 +78,7 @@ public class CommandLineTests
 
     public class MaxThreadsOption
     {
-        [Fact(Skip = "This feature is currently disabled")]
+        [Fact]
         public static void DefaultValueIsNull()
         {
             var commandLine = TestableCommandLine.Parse("assemblyName.dll");
@@ -86,7 +86,7 @@ public class CommandLineTests
             Assert.Null(commandLine.MaxParallelThreads);
         }
 
-        [Fact(Skip = "This feature is currently disabled")]
+        [Fact]
         public static void MissingValue()
         {
             var ex = Assert.Throws<ArgumentException>(() => TestableCommandLine.Parse("assemblyName.dll", "-maxthreads"));
@@ -94,7 +94,7 @@ public class CommandLineTests
             Assert.Equal("missing argument for -maxthreads", ex.Message);
         }
 
-        [Theory(Skip = "This feature is currently disabled")]
+        [Theory]
         [InlineData("0")]
         [InlineData("abc")]
         public static void InvalidValues(string value)
@@ -104,7 +104,7 @@ public class CommandLineTests
             Assert.Equal("incorrect argument value for -maxthreads (must be 'default', 'unlimited', or a positive number)", ex.Message);
         }
 
-        [Theory(Skip = "This feature is currently disabled")]
+        [Theory]
         [InlineData("default", 0)]
         [InlineData("unlimited", -1)]
         [InlineData("16", 16)]
