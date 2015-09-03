@@ -23,9 +23,9 @@
         }
     },
     "dependencies": {
-        "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7-*",
-        "Microsoft.Dnx.TestAdapter": "1.0.0-beta7-*",
-        "Microsoft.Dnx.TestHost": "1.0.0-beta7-*",
+        "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7",
+        "Microsoft.Dnx.TestAdapter": "1.0.0-beta7",
+        "Microsoft.Dnx.TestHost": "1.0.0-beta7",
         "xunit.runner.utility": "2.1.0-rc1-*",
         "xunit.runner.reporters": "2.1.0-rc1-*"
     },
