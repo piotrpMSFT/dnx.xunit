@@ -61,7 +61,6 @@ namespace Xunit.Runner.Dnx
                 {
                     AssemblyFilename = Path.GetFullPath(assembly.Item1),
                     ConfigFilename = assembly.Item2 != null ? Path.GetFullPath(assembly.Item2) : null,
-                    ShadowCopy = true
                 });
 
             return result;
