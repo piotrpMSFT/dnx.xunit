@@ -231,6 +231,13 @@ namespace Xunit.Runner.Dnx
 
                     project.Filters.IncludedMethods.Add(option.Value);
                 }
+                else if (optionName == "namespace")
+                {
+                    if (option.Value == null)
+                        throw new ArgumentException("missing argument for -namespace");
+
+                    project.Filters.IncludedNameSpaces.Add(option.Value);
+                }
                 // BEGIN: Special command line switches for DNX <=> Visual Studio integration
                 else if (optionName == "test" || optionName == "-test")
                 {

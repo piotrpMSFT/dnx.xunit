@@ -200,10 +200,10 @@ namespace Xunit.Runner.Dnx
             Console.WriteLine("  -nologo                : do not show the copyright message");
             Console.WriteLine("  -nocolor               : do not output results with colors");
             Console.WriteLine("  -parallel option       : set parallelization based on option");
-            Console.WriteLine("                         :   none - turn off all parallelization");
+            Console.WriteLine("                         :   none        - turn off all parallelization");
             Console.WriteLine("                         :   collections - only parallelize collections");
-            Console.WriteLine("                         :   assemblies - only parallelize assemblies");
-            Console.WriteLine("                         :   all - parallelize collections and assemblies");
+            Console.WriteLine("                         :   assemblies  - only parallelize assemblies");
+            Console.WriteLine("                         :   all         - parallelize collections and assemblies");
             Console.WriteLine("  -maxthreads count      : maximum thread count for collection parallelization");
             Console.WriteLine("                         :   default   - run with default (1 thread per CPU thread)");
             Console.WriteLine("                         :   unlimited - run with unbounded thread count");
@@ -222,6 +222,9 @@ namespace Xunit.Runner.Dnx
             Console.WriteLine("                         : if specified more than once, acts as an OR operation");
             Console.WriteLine("  -class \"name\"          : run all methods in a given test class (should be fully");
             Console.WriteLine("                         : specified; i.e., 'MyNamespace.MyClass')");
+            Console.WriteLine("                         : if specified more than once, acts as an OR operation");
+            Console.WriteLine("  -namespace \"name\"      : run all methods in a given namespace (i.e.,");
+            Console.WriteLine("                         : 'MyNamespace.MySubNamespace')");
             Console.WriteLine("                         : if specified more than once, acts as an OR operation");
             Console.WriteLine();
 
