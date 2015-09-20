@@ -10,6 +10,12 @@ echo "Installing .NET Execution Environment..."
 echo ""
 
 . tools/dnvm.sh
+dnvm install 1.0.0-beta8-15618 -r coreclr -u
+if [ $? -ne 0 ]; then
+  echo >&2 ".NET Execution Environment installation has failed."
+  exit 1
+fi
+
 dnvm install 1.0.0-beta8-15618 -u
 if [ $? -ne 0 ]; then
   echo >&2 ".NET Execution Environment installation has failed."
@@ -42,6 +48,13 @@ echo "Running tests..."
 echo ""
 dnx -p test/test.xunit.runner.dnx test -parallel none
 if [ $? -ne 0 ]; then
-  echo >&2 "Running tests has failed."
+  echo >&2 "Running tests on Mono has failed."
+  exit 1
+fi
+
+dnvm use 1.0.0-beta8-15618 -r coreclr
+dnx -p test/test.xunit.runner.dnx test -parallel none
+if [ $? -ne 0 ]; then
+  echo >&2 "Running tests on CoreCLR has failed."
   exit 1
 fi
