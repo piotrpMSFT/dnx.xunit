@@ -33,4 +33,4 @@ dnx -p path/to/project test
 
 ### More Information
 
-For a more complete example of usage, pleas see [Getting Started with xUnit.net and DNX / ASP.NET 5](http://xunit.github.io/docs/getting-started-dnx.html).
+For more complete example usage, please see [Getting Started with xUnit.net and DNX / ASP.NET 5](http://xunit.github.io/docs/getting-started-dnx.html).
