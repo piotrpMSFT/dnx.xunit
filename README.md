@@ -24,6 +24,9 @@ To run tests from the command line, use the following.
 # Restore NuGet packages
 dnu restore
 
-# Run tests (change "." with a folder path if tests are not in the current directory)
-dnx . test
+# Run tests in current directory
+dnx test
+
+# Run tests if tests are not in the current directory
+dnx -p path/to/project test
 ```
