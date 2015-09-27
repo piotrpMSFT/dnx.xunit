@@ -31,8 +31,8 @@
         "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta8-*",
         "Microsoft.Dnx.Testing.Abstractions": "1.0.0-beta8-*",
         "Microsoft.Dnx.TestHost": "1.0.0-beta8-*",
-        "xunit.runner.utility": "2.1.0-rc2-*",
-        "xunit.runner.reporters": "2.1.0-rc2-*"
+        "xunit.runner.utility": "2.1.0",
+        "xunit.runner.reporters": "2.1.0"
     },
     "repository": {
         "type": "git",
