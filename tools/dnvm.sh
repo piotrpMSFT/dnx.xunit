@@ -2,7 +2,7 @@
 # Source this file from your .bash-profile or script to use
 
 # "Constants"
-_DNVM_BUILDNUMBER="beta8-15506"
+_DNVM_BUILDNUMBER="rc1-15523"
 _DNVM_AUTHORS="Microsoft Open Technologies, Inc."
 _DNVM_RUNTIME_PACKAGE_NAME="dnx"
 _DNVM_RUNTIME_FRIENDLY_NAME=".NET Execution Environment"
@@ -12,7 +12,7 @@ _DNVM_COMMAND_NAME="dnvm"
 _DNVM_PACKAGE_MANAGER_NAME="dnu"
 _DNVM_VERSION_MANAGER_NAME=".NET Version Manager"
 _DNVM_DEFAULT_FEED="https://www.nuget.org/api/v2"
-_DNVM_DEFAULT_UNSTABLE_FEED="https://www.myget.org/F/aspnetvnext/api/v2"
+_DNVM_DEFAULT_UNSTABLE_FEED="https://www.myget.org/F/aspnetrelease/api/v2"
 _DNVM_UPDATE_LOCATION="https://raw.githubusercontent.com/aspnet/Home/dev/dnvm.sh"
 
 if [ "$NO_COLOR" != "1" ]; then
@@ -201,7 +201,12 @@ __dnvm_update_self() {
     if [ ! -e $dnvmFileLocation ]; then
         local formattedDnvmFileLocation=`(echo $dnvmFileLocation | sed s=$HOME=~=g)`
         local formattedDnvmHome=`(echo $_DNVM_DNVM_DIR | sed s=$HOME=~=g)`
-        printf "%b\n" "${Red}$formattedDnvmFileLocation doesn't exist. This command assumes you have installed dnvm in the usual location and are trying to update it. If you want to use update-self then dnvm.sh should be sourced from $formattedDnvmHome ${RCol}"
+        local bashSourceLocation=${BASH_SOURCE}
+        local scriptLocation=$bashSourceLocation
+        if [ -z "${bashSourceLocation}" ]; then
+          local scriptLocation=${(%):-%x}
+        fi
+        printf "%b\n" "${Red}$formattedDnvmFileLocation doesn't exist. This command assumes you have installed dnvm in the usual location and are trying to update it. If you want to use update-self then dnvm.sh should be sourced from $formattedDnvmHome. dnvm is currently sourced from $scriptLocation ${RCol}"
         return 1
     fi
     printf "%b\n" "${Cya}Downloading dnvm.sh from $_DNVM_UPDATE_LOCATION ${RCol}"
@@ -215,10 +220,11 @@ __dnvm_update_self() {
 
 __dnvm_promptSudo() {
     local acceptSudo="$1"
+    local sudoMsg="$2"
 
     local answer=
     if [ "$acceptSudo" == "0" ]; then
-        echo "In order to install dnx globally, dnvm will have to temporarily run as root."
+        echo $2
         read -p "You may be prompted for your password via 'sudo' during this process. Is this Ok? (y/N) " answer
     else
         answer="y"
@@ -259,7 +265,7 @@ __dnvm_download() {
     local useSudo=
     mkdir -p "$runtimeFolder" > /dev/null 2>&1
     if [ ! -d $runtimeFolder ]; then
-        if ! __dnvm_promptSudo $acceptSudo ; then
+        if ! __dnvm_promptSudo $acceptSudo "In order to install dnx globally, dnvm will have to temporarily run as root." ; then
             useSudo=sudo
             sudo mkdir -p "$runtimeFolder" > /dev/null 2>&1 || return 1
         else
@@ -328,24 +334,30 @@ __dnvm_requested_version_or_alias() {
     else
         if [ -e "$_DNVM_ALIAS_DIR/$versionOrAlias.alias" ]; then
             local runtimeFullName=$(cat "$_DNVM_ALIAS_DIR/$versionOrAlias.alias")
-            echo "$runtimeFullName"
-        else
-            local pkgVersion=$versionOrAlias
-            local pkgArchitecture="x64"
-            local pkgSystem=$os
-
-            if [[ -z $runtime || "$runtime" == "mono" ]]; then
-                echo "$_DNVM_RUNTIME_PACKAGE_NAME-mono.$pkgVersion"
-            else
-                if [ "$arch" != "" ]; then
-                    local pkgArchitecture="$arch"
-                fi
-                if [ "$os" == "" ]; then
-                    local pkgSystem=$(__dnvm_current_os)
-                fi
-
-                echo "$_DNVM_RUNTIME_PACKAGE_NAME-$runtime-$pkgSystem-$pkgArchitecture.$pkgVersion"
+            if [[ ! -n "$runtime" && ! -n "$arch" ]]; then
+                echo "$runtimeFullName"
+                return
             fi
+            local pkgVersion=$(__dnvm_package_version "$runtimeFullName")
+        fi
+
+        if [[ ! -n "$pkgVersion" ]]; then
+            local pkgVersion=$versionOrAlias
+        fi
+        local pkgArchitecture="x64"
+        local pkgSystem=$os
+
+        if [[ -z $runtime || "$runtime" == "mono" ]]; then
+            echo "$_DNVM_RUNTIME_PACKAGE_NAME-mono.$pkgVersion"
+        else
+            if [ "$arch" != "" ]; then
+                local pkgArchitecture="$arch"
+            fi
+            if [ "$os" == "" ]; then
+                local pkgSystem=$(__dnvm_current_os)
+            fi
+
+            echo "$_DNVM_RUNTIME_PACKAGE_NAME-$runtime-$pkgSystem-$pkgArchitecture.$pkgVersion"
         fi
     fi
 }
@@ -395,6 +407,10 @@ __dnvm_description() {
 
 }
 
+__dnvm_version() {
+   echo "1.0.0-$_DNVM_BUILDNUMBER"
+}
+
 __dnvm_help() {
     __dnvm_description
    printf "%b\n" "${Cya}USAGE:${Yel} $_DNVM_COMMAND_NAME <command> [options] ${RCol}"
@@ -403,33 +419,41 @@ __dnvm_help() {
     echo "  install latest $_DNVM_RUNTIME_SHORT_NAME from feed"
     echo "  adds $_DNVM_RUNTIME_SHORT_NAME bin to path of current command line"
     echo "  set installed version as default"
-    echo "  -f|forces         force upgrade. Overwrite existing version of $_DNVM_RUNTIME_SHORT_NAME if already installed"
-    echo "  -u|unstable       use unstable feed. Installs the $_DNVM_RUNTIME_SHORT_NAME from the unstable feed"
-    echo "  -r|runtime        The runtime flavor to install [clr or coreclr] (default: clr)"
-    echo "  -g|global         Installs the latest $_DNVM_RUNTIME_SHORT_NAME in the configured global $_DNVM_RUNTIME_SHORT_NAME  file location (default: /usr/local/lib/dnx current: $DNX_GLOBAL_HOME)"
-    echo "  -y                Assume Yes to all queries and do not prompt"
+    echo "  -f|-force                   force upgrade. Overwrite existing version of $_DNVM_RUNTIME_SHORT_NAME if already installed"
+    echo "  -u|-unstable                use unstable feed. Installs the $_DNVM_RUNTIME_SHORT_NAME from the unstable feed"
+    echo "  -r|-runtime <runtime>       runtime flavor to install [mono or coreclr] (default: mono)"
+    echo "  -g|-global                  Installs the latest $_DNVM_RUNTIME_SHORT_NAME in the configured global $_DNVM_RUNTIME_SHORT_NAME  file location (default: /usr/local/lib/dnx current: $DNX_GLOBAL_HOME)"
+    echo "  -y                          Assume Yes to all queries and do not prompt"
     echo ""
-   printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME install <semver>|<alias>|<nupkg>|latest [-r <runtime>] [-OS <OS>] [-a|-alias <alias>] [-p|-persistent] [-f|-force] [-u|-unstable] [-g|-global] [-y]${RCol}"
-    echo "  <semver>|<alias>  install requested $_DNVM_RUNTIME_SHORT_NAME from feed"
-    echo "  <nupkg>           install requested $_DNVM_RUNTIME_SHORT_NAME from local package on filesystem"
-    echo "  latest            install latest version of $_DNVM_RUNTIME_SHORT_NAME from feed"
-    echo "  -OS               the operating system that the runtime targets (default:$(__dnvm_current_os)"
-    echo "  -a|-alias <alias> set alias <alias> for requested $_DNVM_RUNTIME_SHORT_NAME on install"
-    echo "  -p|-persistent    set installed version as default"
-    echo "  -f|force          force install. Overwrite existing version of $_DNVM_RUNTIME_SHORT_NAME if already installed"
-    echo "  -u|unstable       use unstable feed. Installs the $_DNVM_RUNTIME_SHORT_NAME from the unstable feed"
-    echo "  -r|runtime        The runtime flavor to install [mono or coreclr] (default: mono)"
-    echo "  -g|global         Installs to the configured global $_DNVM_RUNTIME_SHORT_NAME file location (default: /usr/local/lib/dnx current: $DNX_GLOBAL_HOME)"
-    echo "  -y                Assume Yes to all queries and do not prompt"
+   printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME install <semver>|<alias>|<nupkg>|latest [-r <runtime>] [-OS <OS>] [-alias <alias>] [-a|-arch <architecture>] [-p|-persistent] [-f|-force] [-u|-unstable] [-g|-global] [-y]${RCol}"
+    echo "  <semver>|<alias>            install requested $_DNVM_RUNTIME_SHORT_NAME from feed"
+    echo "  <nupkg>                     install requested $_DNVM_RUNTIME_SHORT_NAME from local package on filesystem"
+    echo "  latest                      install latest version of $_DNVM_RUNTIME_SHORT_NAME from feed"
+    echo "  -OS <operating system>      the operating system that the runtime targets (default:$(__dnvm_current_os))"
+    echo "  -alias <alias>              set alias <alias> for requested $_DNVM_RUNTIME_SHORT_NAME on install"
+    echo "  -a|-arch <architecture>     architecture to use (x64)"
+    echo "  -p|-persistent              set installed version as default"
+    echo "  -f|-force                   force install. Overwrite existing version of $_DNVM_RUNTIME_SHORT_NAME if already installed"
+    echo "  -u|-unstable                use unstable feed. Installs the $_DNVM_RUNTIME_SHORT_NAME from the unstable feed"
+    echo "  -r|-runtime <runtime>       runtime flavor to install [mono or coreclr] (default: mono)"
+    echo "  -g|-global                  Installs to the configured global $_DNVM_RUNTIME_SHORT_NAME file location (default: /usr/local/lib/dnx current: $DNX_GLOBAL_HOME)"
+    echo "  -y                          Assume Yes to all queries and do not prompt"
     echo ""
     echo "  adds $_DNVM_RUNTIME_SHORT_NAME bin to path of current command line"
+    echo ""
+   printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME uninstall <semver> [-r|-runtime <runtime>] [-a|-arch <architecture>] [-OS <OS>]${RCol}"
+    echo "  <semver>                    the version to uninstall"
+    echo "  -r|-runtime <runtime>       runtime flavor to uninstall [mono or coreclr] (default: mono)"
+    echo "  -a|-arch <architecture>     architecture to use (x64)"
+    echo "  -OS <operating system>      the operating system that the runtime targets (default:$(__dnvm_current_os))"
+    echo "  -y                          Assume Yes to all queries and do not prompt"
     echo ""
    printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME use <semver>|<alias>|<package>|none [-p|-persistent] [-r|-runtime <runtime>] [-a|-arch <architecture>] ${RCol}"
     echo "  <semver>|<alias>|<package>  add $_DNVM_RUNTIME_SHORT_NAME bin to path of current command line   "
     echo "  none                        remove $_DNVM_RUNTIME_SHORT_NAME bin from path of current command line"
     echo "  -p|-persistent              set selected version as default"
-    echo "  -r|-runtime                 runtime to use (mono, coreclr)"
-    echo "  -a|-arch                    architecture to use (x64)"
+    echo "  -r|-runtime <runtime>       runtime flavor to use [mono or coreclr] (default: mono)"
+    echo "  -a|-arch <architecture>     architecture to use (x64)"
     echo ""
    printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME run <semver>|<alias> <args...> ${RCol}"
     echo "  <semver>|<alias>            the version or alias to run"
@@ -457,14 +481,17 @@ __dnvm_help() {
     echo "  display value of the specified alias"
     echo ""
    printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME alias <alias> <semver>|<alias>|<package> ${RCol}"
-    echo "  <alias>                      the name of the alias to set"
-    echo "  <semver>|<alias>|<package>   the $_DNVM_RUNTIME_SHORT_NAME version to set the alias to. Alternatively use the version of the specified alias"
+    echo "  <alias>                     the name of the alias to set"
+    echo "  <semver>|<alias>|<package>  the $_DNVM_RUNTIME_SHORT_NAME version to set the alias to. Alternatively use the version of the specified alias"
     echo ""
-   printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME unalias <alias> ${RCol}"
+   printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME alias [-d|-delete] <alias> ${RCol}"
     echo "  remove the specified alias"
     echo ""
    printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME [help|-h|-help|--help] ${RCol}"
     echo "  displays this help text."
+    echo ""
+   printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME [version|-v|-version|--version] ${RCol}"
+    echo "  print the dnvm version."
     echo ""
    printf "%b\n" "${Yel}$_DNVM_COMMAND_NAME update-self ${RCol}"
     echo "  updates dnvm itself."
@@ -483,6 +510,10 @@ dnvm()
     case $1 in
         "help"|"-h"|"-help"|"--help" )
             __dnvm_help
+        ;;
+
+        "version"|"-v"|"-version"|"--version" )
+            __dnvm_version
         ;;
 
         "update-self" )
@@ -511,7 +542,7 @@ dnvm()
             do
                 if [[ $1 == "-p" || $1 == "-persistent" ]]; then
                     local persistent="-p"
-                elif [[ $1 == "-a" || $1 == "-alias" ]]; then
+                elif [[ $1 == "-alias" ]]; then
                     local alias=$2
                     shift
                 elif [[ $1 == "-f" || $1 == "-force" ]]; then
@@ -524,14 +555,14 @@ dnvm()
                 elif [[ $1 == "-OS" ]]; then
                     local os=$2
                     shift
-		elif [[ $1 == "-y" ]]; then
+                elif [[ $1 == "-y" ]]; then
                     local acceptSudo=1
-                elif [[ $1 == "-arch" ]]; then
+                elif [[ $1 == "-a" || $1 == "-arch" ]]; then
                     local arch=$2
                     shift
 
                     if [[ $arch != "x86" && $arch != "x64" ]]; then
-                        printf "%b\n" "${Red}Architecture must be x86 or x64.${RCol}" 
+                        printf "%b\n" "${Red}Architecture must be x86 or x64.${RCol}"
                         return 1
                     fi
                 elif [[ $1 == "-g" || $1 == "-global" ]]; then
@@ -638,7 +669,7 @@ dnvm()
                   local useSudo=
                   mkdir -p "$runtimeFolder" > /dev/null 2>&1
                   if [ ! -d $runtimeFolder ]; then
-                     if ! __dnvm_promptSudo $acceptSudo ; then
+                     if ! __dnvm_promptSudo $acceptSudo "In order to install dnx globally, dnvm will have to temporarily run as root." ; then
                          useSudo=sudo
                          sudo mkdir -p "$runtimeFolder" > /dev/null 2>&1 || return 1
                      else
@@ -654,6 +685,79 @@ dnvm()
             fi
         ;;
 
+        "uninstall" )
+            [[ $# -lt 2 ]] && __dnvm_help && return
+            shift
+
+            local versionOrAlias=
+            local runtime=
+            local architecture=
+            local os=
+            local acceptSudo=0
+            while [ $# -ne 0 ]
+            do
+                if [[ $1 == "-r" || $1 == "-runtime" ]]; then
+                    local runtime=$2
+                    shift
+                elif [[ $1 == "-a" || $1 == "-arch" ]]; then
+                    local architecture=$2
+                    shift
+                elif [[ $1 == "-OS" ]]; then
+                    local os=$2
+                    shift
+                elif [[ $1 == "-y" ]]; then
+                    local acceptSudo=1
+                elif [[ -n $1 ]]; then
+                    local versionOrAlias=$1
+                fi
+
+                shift
+            done
+
+            if [[ -z $os ]]; then
+                os=$(__dnvm_current_os)
+            elif [[ $os == "osx" ]]; then
+                os="darwin"
+            fi
+
+            if [[ -z $runtime ]]; then
+                runtime=$(__dnvm_os_runtime_defaults "$os")
+            fi
+
+            if [[ -z $architecture ]]; then
+                architecture=$(__dnvm_runtime_bitness_defaults "$runtime")
+            fi
+
+            # dnx-coreclr-linux-x64.1.0.0-beta7-12290
+            local runtimeFullName=$(__dnvm_requested_version_or_alias "$versionOrAlias" "$runtime" "$architecture" "$os")
+
+            for folder in `echo $DNX_HOME | tr ":" "\n"`; do
+                if [ -e "$folder/runtimes/$runtimeFullName" ]; then
+                    local runtimeFolder="$folder/runtimes/$runtimeFullName"
+                fi
+            done
+
+            if [[ -e $runtimeFolder ]]; then
+                if [[ $runtimeFolder == *"$DNX_GLOBAL_HOME"* ]] ; then
+                    if ! __dnvm_promptSudo $acceptSudo "In order to uninstall a global dnx, dnvm will have to temporarily run as root." ; then
+                        local useSudo=sudo
+                    fi
+                fi
+                $useSudo rm -r $runtimeFolder
+                echo "Removed $runtimeFolder"
+            else
+                echo "$runtimeFolder is not installed"
+            fi
+
+            if [ -d "$_DNVM_ALIAS_DIR" ]; then
+                for __dnvm_file in $(find "$_DNVM_ALIAS_DIR" -name *.alias); do
+                    if [ $(cat $__dnvm_file) == "$runtimeFullName" ]; then
+                        rm $__dnvm_file
+                    fi
+                done
+            fi
+        ;;
+
         "use"|"run"|"exec" )
             [[ $1 == "use" && $# -lt 2 ]] && __dnvm_help && return
 
@@ -662,9 +766,9 @@ dnvm()
             local arch=
             local runtime=
 
+            local versionOrAlias=
             shift
             if [ $cmd == "use" ]; then
-                local versionOrAlias=
                 while [ $# -ne 0 ]
                 do
                     if [[ $1 == "-p" || $1 == "-persistent" ]]; then
@@ -684,8 +788,20 @@ dnvm()
                     shift
                 done
             else
-                local versionOrAlias=$1
-                shift
+                while [ $# -ne 0 ]
+                do
+                    if [[ $1 == "-a" || $1 == "-arch" ]]; then
+                        local arch=$2
+                        shift
+                    elif [[ $1 == "-r" || $1 == "-runtime" ]]; then
+                        local runtime=$2
+                        shift
+                    elif [[ -n $1 ]]; then
+                        [[ -n $versionOrAlias ]] && break
+                        local versionOrAlias=$1
+                    fi
+                    shift
+                done
             fi
 
             if [[ $cmd == "use" && $versionOrAlias == "none" ]]; then
@@ -713,18 +829,20 @@ dnvm()
                     local hostpath="$runtimeBin/dnx"
                     if [[ -e $hostpath ]]; then
                         $hostpath $@
+                        return $?
                     else
                         echo "Cannot find $_DNVM_RUNTIME_SHORT_NAME in $runtimeBin. It may have been corrupted. Use '$_DNVM_COMMAND_NAME install $versionOrAlias -f' to attempt to reinstall it"
                     fi
                 ;;
-                "exec") 
+                "exec")
                     (
                         PATH=$(__dnvm_strip_path "$PATH" "/bin")
                         PATH=$(__dnvm_prepend_path "$PATH" "$runtimeBin")
                         $@
                     )
+                    return $?
                 ;;
-                "use") 
+                "use")
                     echo "Adding" $runtimeBin "to process PATH"
 
                     PATH=$(__dnvm_strip_path "$PATH" "/bin")
@@ -759,10 +877,20 @@ dnvm()
                 return
             fi
             shift
+
+            if [[ $1 == "-d" || $1 == "-delete" ]]; then
+                local name=$2
+                local aliasPath="$_DNVM_ALIAS_DIR/$name.alias"
+                [[ ! -e  "$aliasPath" ]] && echo "Cannot remove alias, '$name' is not a valid alias name" && return 1
+                echo "Removing alias $name"
+                rm "$aliasPath" >> /dev/null 2>&1
+                return
+            fi
+
             local name="$1"
 
             if [[ $# == 1 ]]; then
-                [[ ! -e "$_DNVM_ALIAS_DIR/$name.alias" ]] && echo "There is no alias called '$name'" && return
+                [[ ! -e "$_DNVM_ALIAS_DIR/$name.alias" ]] && echo "There is no alias called '$name'" && return 1
                 cat "$_DNVM_ALIAS_DIR/$name.alias"
                 echo ""
                 return
@@ -793,17 +921,16 @@ dnvm()
             local action="Setting"
             [[ -e "$_DNVM_ALIAS_DIR/$name.alias" ]] && action="Updating"
             echo "$action alias '$name' to '$runtimeFullName'"
-            echo "$runtimeFullName" > "$_DNVM_ALIAS_DIR/$name.alias"
+            echo "$runtimeFullName" >| "$_DNVM_ALIAS_DIR/$name.alias"
         ;;
 
         "unalias" )
             [[ $# -ne 2 ]] && __dnvm_help && return
 
             local name=$2
-            local aliasPath="$_DNVM_ALIAS_DIR/$name.alias"
-            [[ ! -e  "$aliasPath" ]] && echo "Cannot remove alias, '$name' is not a valid alias name" && return 1
-            echo "Removing alias $name"
-            rm "$aliasPath" >> /dev/null 2>&1
+            echo "This command has been deprecated. Use '$_DNVM_COMMAND_NAME alias -d' instead"
+            $_DNVM_COMMAND_NAME alias -d $name
+            return $?
         ;;
 
         "list" )
@@ -816,10 +943,12 @@ dnvm()
             local runtimes=""
             for location in `echo $DNX_HOME | tr ":" "\n"`; do
                 location+="/runtimes"
-                local oruntimes="$(find $location -name "$searchGlob" \( -type d -or -type l \) -prune -exec basename {} \;)"
-                for v in `echo $oruntimes | tr "\n" " "`; do
-                    runtimes+="$v:$location"$'\n'
-                done
+                if [ -d "$location" ]; then
+                    local oruntimes="$(find $location -name "$searchGlob" \( -type d -or -type l \) -prune -exec basename {} \;)"
+                    for v in `echo $oruntimes | tr "\n" " "`; do
+                        runtimes+="$v:$location"$'\n'
+                    done
+                fi
             done
 
             [[ -z $runtimes ]] && echo 'No runtimes installed. You can run `dnvm install latest` or `dnvm upgrade` to install a runtime.' && return
@@ -833,7 +962,6 @@ dnvm()
 
             # Z shell array-index starts at one.
             local i=1
-            local format="%-20s %s\n"
             if [ -d "$_DNVM_ALIAS_DIR" ]; then
                 for __dnvm_file in $(find "$_DNVM_ALIAS_DIR" -name *.alias); do
                     if [ ! -d "$_DNVM_USER_PACKAGES/$(cat $__dnvm_file)" ] && [ ! -d "$_DNVM_GLOBAL_PACKAGES/$(cat $__dnvm_file)" ]; then
@@ -923,4 +1051,4 @@ dnvm()
 [[ ":$PATH:" != *":$DNX_USER_HOME/bin:"* ]] && export PATH="$DNX_USER_HOME/bin:$PATH"
 
 # Generate the command function using the constant defined above.
-$_DNVM_COMMAND_NAME list default >/dev/null && $_DNVM_COMMAND_NAME use default >/dev/null || true
+$_DNVM_COMMAND_NAME alias default >/dev/null && $_DNVM_COMMAND_NAME use default >/dev/null || true
