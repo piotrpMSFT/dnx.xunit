@@ -67,7 +67,7 @@ function _WriteOut {
 
 ### Constants
 $ProductVersion="1.0.0"
-$BuildVersion="beta8-15521"
+$BuildVersion="rc1-15527"
 $Authors="Microsoft Open Technologies, Inc."
 
 # If the Version hasn't been replaced...
@@ -87,7 +87,7 @@ Set-Variable -Option Constant "OldUserDirectoryNames" @(".kre", ".k")
 Set-Variable -Option Constant "RuntimePackageName" "dnx"
 Set-Variable -Option Constant "DefaultFeed" "https://www.nuget.org/api/v2"
 Set-Variable -Option Constant "DefaultFeedKey" "DNX_FEED"
-Set-Variable -Option Constant "DefaultUnstableFeed" "https://www.myget.org/F/aspnetrelease/api/v2"
+Set-Variable -Option Constant "DefaultUnstableFeed" "https://www.myget.org/F/aspnetvnext/api/v2"
 Set-Variable -Option Constant "DefaultUnstableFeedKey" "DNX_UNSTABLE_FEED"
 Set-Variable -Option Constant "CrossGenCommand" "dnx-crossgen"
 Set-Variable -Option Constant "OldCrossGenCommand" "k-crossgen"
@@ -109,8 +109,8 @@ Set-Variable -Option Constant "DNVMUpgradeUrl" "https://raw.githubusercontent.co
 Set-Variable -Option Constant "AsciiArt" @"
    ___  _  ___   ____  ___
   / _ \/ |/ / | / /  |/  /
- / // /    /| |/ / /|_/ / 
-/____/_/|_/ |___/_/  /_/  
+ / // /    /| |/ / /|_/ /
+/____/_/|_/ |___/_/  /_/
 "@
 
 $ExitCodes = @{
@@ -184,24 +184,24 @@ if($CmdPathFile) {
 # Determine the default installation directory (UserHome)
 if(!$UserHome) {
     if ($RuntimeHomes) {
-    _WriteDebug "Detecting User Home..."
-    $pf = $env:ProgramFiles
-    if(Test-Path "env:\ProgramFiles(x86)") {
-        $pf32 = Get-Content "env:\ProgramFiles(x86)"
-    }
+      _WriteDebug "Detecting User Home..."
+      $pf = $env:ProgramFiles
+      if(Test-Path "env:\ProgramFiles(x86)") {
+          $pf32 = Get-Content "env:\ProgramFiles(x86)"
+      }
 
-    # Canonicalize so we can do StartsWith tests
-    if(!$pf.EndsWith("\")) { $pf += "\" }
-    if($pf32 -and !$pf32.EndsWith("\")) { $pf32 += "\" }
+      # Canonicalize so we can do StartsWith tests
+      if(!$pf.EndsWith("\")) { $pf += "\" }
+      if($pf32 -and !$pf32.EndsWith("\")) { $pf32 += "\" }
 
       $UserHome = $RuntimeHomes.Split(";") | Where-Object {
-        # Take the first path that isn't under program files
-        !($_.StartsWith($pf) -or $_.StartsWith($pf32))
-    } | Select-Object -First 1
+          # Take the first path that isn't under program files
+          !($_.StartsWith($pf) -or $_.StartsWith($pf32))
+      } | Select-Object -First 1
 
-    _WriteDebug "Found: $UserHome"
+      _WriteDebug "Found: $UserHome"
     }
-    
+
     if(!$UserHome) {
         $UserHome = "$DefaultUserHome"
     }
@@ -263,17 +263,17 @@ function Clean-HomeEnv {
 }
 
 # Checks if a specified file exists in the destination folder and if not, copies the file
-# to the destination folder. 
+# to the destination folder.
 function Safe-Filecopy {
     param(
-        [Parameter(Mandatory=$true, Position=0)] $Filename, 
+        [Parameter(Mandatory=$true, Position=0)] $Filename,
         [Parameter(Mandatory=$true, Position=1)] $SourceFolder,
         [Parameter(Mandatory=$true, Position=2)] $DestinationFolder)
 
     # Make sure the destination folder is created if it doesn't already exist.
     if(!(Test-Path $DestinationFolder)) {
         _WriteOut "Creating destination folder '$DestinationFolder' ... "
-        
+
         New-Item -Type Directory $Destination | Out-Null
     }
 
@@ -291,7 +291,7 @@ function Safe-Filecopy {
         }
     }
     else {
-        _WriteOut "WARNING: Unable to install: Could not find '$Filename' in '$SourceFolder'. " 
+        _WriteOut "WARNING: Unable to install: Could not find '$Filename' in '$SourceFolder'. "
     }
 }
 
@@ -335,9 +335,9 @@ function GetRuntimeInfo($Architecture, $Runtime, $OS, $Version) {
     if([String]::IsNullOrEmpty($runtimeInfo.Architecture)) {
         $runtimeInfo.Architecture = $RuntimeBitnessDefaults.Get_Item($RuntimeInfo.Runtime)
     }
-    
+
     $runtimeObject = New-Object PSObject -Property $runtimeInfo
-    
+
     $runtimeObject | Add-Member -MemberType ScriptProperty -Name RuntimeId -Value {
         if($this.Runtime -eq "mono") {
             "$RuntimePackageName-$($this.Runtime)".ToLowerInvariant()
@@ -423,28 +423,28 @@ function Get-RuntimeAliasOrRuntimeInfo(
         $BaseName = Get-Content $aliasPath
 
         if(!$Architecture) {
-        $Architecture = Get-PackageArch $BaseName
+            $Architecture = Get-PackageArch $BaseName
         }
         if(!$Runtime) {
-        $Runtime = Get-PackageRuntime $BaseName
+            $Runtime = Get-PackageRuntime $BaseName
         }
         $Version = Get-PackageVersion $BaseName
         $OS = Get-PackageOS $BaseName
     }
-    
-    GetRuntimeInfo $Architecture $Runtime $OS $Version 
+
+    GetRuntimeInfo $Architecture $Runtime $OS $Version
 }
 
 filter List-Parts {
     param($aliases, $items)
 
-	$location = ""
+    $location = ""
 
-	$binDir = Join-Path $_.FullName "bin"
-	if ((Test-Path $binDir)) {
+    $binDir = Join-Path $_.FullName "bin"
+    if ((Test-Path $binDir)) {
         $location = $_.Parent.FullName
     }
-	$active = IsOnPath $binDir
+    $active = IsOnPath $binDir
 
     $fullAlias=""
     $delim=""
@@ -522,7 +522,7 @@ function Write-Alias {
 
     $aliasFilePath = Join-Path $AliasesDir "$Name.txt"
     $action = if (Test-Path $aliasFilePath) { "Updating" } else { "Setting" }
-    
+
     if(!(Test-Path $AliasesDir)) {
         _WriteDebug "Creating alias directory: $AliasesDir"
         New-Item -Type Directory $AliasesDir | Out-Null
@@ -658,11 +658,11 @@ function Download-Package() {
         [string]$Feed,
         [string]$Proxy
     )
-    
+
     _WriteOut "Downloading $($runtimeInfo.RuntimeName) from $feed"
     $wc = New-Object System.Net.WebClient
     try {
-      Apply-Proxy $wc -Proxy:$Proxy     
+      Apply-Proxy $wc -Proxy:$Proxy
       _WriteDebug "Downloading $DownloadUrl ..."
 
       Register-ObjectEvent $wc DownloadProgressChanged -SourceIdentifier WebClient.ProgressChanged -action {
@@ -728,7 +728,7 @@ function Unpack-Package([string]$DownloadFile, [string]$UnpackFolder) {
       }
     } else {
         [System.IO.Compression.ZipFile]::ExtractToDirectory($DownloadFile, $UnpackFolder)
-        
+
         # Clean up the package file itself.
         Remove-Item $DownloadFile -Force
     }
@@ -764,7 +764,7 @@ function Change-Path() {
         [string[]] $removePaths
     )
     _WriteDebug "Updating value to prepend '$prependPath' and remove '$removePaths'"
-    
+
     $newPath = $prependPath
     foreach($portion in $existingPaths.Split(';')) {
         if(![string]::IsNullOrEmpty($portion)) {
@@ -846,6 +846,14 @@ function Is-Elevated() {
     return $user.IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 }
 
+function Get-ScriptRoot() {
+    if ($PSVersionTable.PSVersion.Major -ge 3) {
+        return $PSScriptRoot
+    }
+
+    return Split-Path $script:MyInvocation.MyCommand.Path -Parent
+}
+
 ### Commands
 
 <#
@@ -856,16 +864,17 @@ function Is-Elevated() {
 #>
 function dnvm-update-self {
     param(
-        [Parameter(Mandatory=$false)] 
+        [Parameter(Mandatory=$false)]
         [string]$Proxy)
 
     _WriteOut "Updating $CommandName from $DNVMUpgradeUrl"
     $wc = New-Object System.Net.WebClient
     Apply-Proxy $wc -Proxy:$Proxy
-    
-    $dnvmFile = Join-Path $PSScriptRoot "dnvm.ps1"
-    $tempDnvmFile = Join-Path $PSScriptRoot "temp"
-    $backupFilePath = Join-Path $PSSCriptRoot "dnvm.ps1.bak"
+
+    $CurrentScriptRoot = Get-ScriptRoot
+    $dnvmFile = Join-Path $CurrentScriptRoot "dnvm.ps1"
+    $tempDnvmFile = Join-Path $CurrentScriptRoot "temp"
+    $backupFilePath = Join-Path $CurrentScriptRoot "dnvm.ps1.bak"
 
     $wc.DownloadFile($DNVMUpgradeUrl, $tempDnvmFile)
 
@@ -921,7 +930,7 @@ function dnvm-help {
                         }
 
                         _WriteOut -NoNewLine " "
-                        
+
                         if($_.required -ne "true") {
                             _WriteOut -NoNewLine -ForegroundColor $ColorScheme.Help_Optional "["
                         }
@@ -931,7 +940,7 @@ function dnvm-help {
                         }
                         if($_.parameterValue) {
                             if($_.position -eq "Named") {
-                                _WriteOut -NoNewLine " "       
+                                _WriteOut -NoNewLine " "
                             }
                             _WriteOut -NoNewLine -ForegroundColor $ColorScheme.Help_Argument "<$($_.name)>"
                         }
@@ -953,9 +962,9 @@ function dnvm-help {
                     if($cmdParam.Aliases.Length -gt 0) {
                         $name = $cmdParam.Aliases | Sort-Object | Select-Object -First 1
                     }
-                    
+
                     _WriteOut -NoNewLine "  "
-                    
+
                     if($_.position -eq "Named") {
                         _WriteOut -NoNewLine -ForegroundColor $ColorScheme.Help_Switch "-$name".PadRight($OptionPadding)
                     } else {
@@ -968,7 +977,7 @@ function dnvm-help {
             if($help.description) {
                 _WriteOut
                 _WriteOut -ForegroundColor $ColorScheme.Help_Header "remarks:"
-                $help.description.Text.Split(@("`r", "`n"), "RemoveEmptyEntries") | 
+                $help.description.Text.Split(@("`r", "`n"), "RemoveEmptyEntries") |
                     ForEach-Object { _WriteOut "  $_" }
             }
 
@@ -981,7 +990,7 @@ function dnvm-help {
         Write-Feeds
         _WriteOut
         _WriteOut -ForegroundColor $ColorScheme.Help_Header "commands: "
-        Get-Command "$CommandPrefix*" | 
+        Get-Command "$CommandPrefix*" |
             ForEach-Object {
                 if($Host.Version.Major -lt 3) {
                     $h = Get-Help $_.Name
@@ -1003,7 +1012,7 @@ filter ColorActive {
     $lines = $_.Split("`n")
     foreach($line in $lines) {
         if($line.Contains("*")){
-            _WriteOut -ForegroundColor $ColorScheme.ActiveRuntime $line 
+            _WriteOut -ForegroundColor $ColorScheme.ActiveRuntime $line
         } else {
             _WriteOut $line
         }
@@ -1044,9 +1053,9 @@ function dnvm-list {
         }
     }
 
-	$aliases | Where-Object {$_.Orphan} | ForEach-Object {
-		$items += $_ | Select-Object @{label='Name';expression={$_.Name}}, @{label='FullName';expression={Join-Path $RuntimesDir $_.Name}} | List-Parts $aliases
-	}
+    $aliases | Where-Object {$_.Orphan} | ForEach-Object {
+        $items += $_ | Select-Object @{label='Name';expression={$_.Name}}, @{label='FullName';expression={Join-Path $RuntimesDir $_.Name}} | List-Parts $aliases
+    }
 
     if($PassThru) {
         $items
@@ -1054,12 +1063,12 @@ function dnvm-list {
         if($items) {
             #TODO: Probably a better way to do this.
             if($Detailed) {
-                $items | 
-                    Sort-Object Version, Runtime, Architecture, OperatingSystem, Alias | 
+                $items |
+                    Sort-Object Version, Runtime, Architecture, OperatingSystem, Alias |
                     Format-Table -AutoSize -Property @{name="Active";expression={if($_.Active) { "*" } else { "" }};alignment="center"}, "Version", "Runtime", "Architecture", "OperatingSystem", "Alias", "Location" | Out-String| ColorActive
             } else {
-                $items | 
-                    Sort-Object Version, Runtime, Architecture, OperatingSystem, Alias | 
+                $items |
+                    Sort-Object Version, Runtime, Architecture, OperatingSystem, Alias |
                     Format-Table -AutoSize -Property @{name="Active";expression={if($_.Active) { "*" } else { "" }};alignment="center"}, "Version", "Runtime", "Architecture", "OperatingSystem", "Alias" | Out-String | ColorActive
             }
         } else {
@@ -1090,7 +1099,7 @@ function dnvm-list {
     (defaults to 'x86') and <Runtime> (defaults to 'clr').
 
     Finally, if the '-d' switch is provided, the alias <Name> is deleted, if it exists.
-    
+
     NOTE: You cannot create an alias for a non-windows runtime. The intended use case for
     an alias to help make it easier to switch the runtime, and you cannot use a non-windows
     runtime on a windows machine.
@@ -1111,10 +1120,10 @@ function dnvm-alias {
         [string]$Architecture = "",
 
         [Alias("r")]
-        [ValidateSet("", "clr","coreclr", "mono")]
+        [ValidateSet("", "clr", "coreclr", "mono")]
         [Parameter(ParameterSetName="Write")]
         [string]$Runtime = "",
-            
+
         [ValidateSet("win", "osx", "darwin", "linux")]
         [Parameter(Mandatory=$false,ParameterSetName="Write")]
         [string]$OS = "")
@@ -1168,7 +1177,7 @@ function dnvm-unalias {
 .PARAMETER Ngen
     For CLR flavor only. Generate native images for runtime libraries on Desktop CLR to improve startup time. This option requires elevated privilege and will be automatically turned on if the script is running in administrative mode. To opt-out in administrative mode, use -NoNative switch.
 .PARAMETER Unstable
-    Upgrade from the unstable dev feed. This will give you the latest development version of the runtime. 
+    Upgrade from the unstable dev feed. This will give you the latest development version of the runtime.
 .PARAMETER Global
     Installs to configured global dnx file location (default: C:\ProgramData)
 #>
@@ -1186,7 +1195,7 @@ function dnvm-upgrade {
         [ValidateSet("", "clr", "coreclr", "mono")]
         [Parameter(Mandatory=$false)]
         [string]$Runtime = "",
-        
+
         [ValidateSet("", "win", "osx", "darwin", "linux")]
         [Parameter(Mandatory=$false)]
         [string]$OS = "",
@@ -1207,7 +1216,7 @@ function dnvm-upgrade {
         [Alias("u")]
         [Parameter(Mandatory=$false)]
         [switch]$Unstable,
-        
+
         [Alias("g")]
         [Parameter(Mandatory=$false)]
         [switch]$Global)
@@ -1266,7 +1275,7 @@ function dnvm-install {
         [string]$Architecture = "",
 
         [Alias("r")]
-        [ValidateSet("", "clr","coreclr","mono")]
+        [ValidateSet("", "clr", "coreclr", "mono")]
         [Parameter(Mandatory=$false)]
         [string]$Runtime = "",
 
@@ -1347,7 +1356,7 @@ function dnvm-install {
             if([String]::IsNullOrEmpty($Architecture)) {
                 $Architecture = Get-PackageArch $BaseName
             }
-            
+
             if([String]::IsNullOrEmpty($Runtime)) {
                 $Runtime = Get-PackageRuntime $BaseName
             }
@@ -1355,7 +1364,7 @@ function dnvm-install {
             if([String]::IsNullOrEmpty($Version)) {
                 $Version = Get-PackageVersion $BaseName
             }
-            
+ 
             if([String]::IsNullOrEmpty($OS)) {
                 $OS = Get-PackageOS $BaseName
             }
@@ -1420,12 +1429,12 @@ function dnvm-install {
         }
     }
     else {
-         
+
         $Architecture = $runtimeInfo.Architecture
         $Runtime = $runtimeInfo.Runtime
         $OS = $runtimeInfo.OS
-        
-        $TempFolder = Join-Path $installDir "temp" 
+
+        $TempFolder = Join-Path $installDir "temp"
         $UnpackFolder = Join-Path $TempFolder $runtimeFullName
         $DownloadFile = Join-Path $UnpackFolder "$runtimeFullName.nupkg"
 
@@ -1475,7 +1484,7 @@ function dnvm-install {
         if($runtimeInfo.OS -eq "win") {
             dnvm-use $runtimeInfo.Version -Architecture:$runtimeInfo.Architecture -Runtime:$runtimeInfo.Runtime -Persistent:$Persistent -OS:$runtimeInfo.OS
         }
-        
+
         if ($runtimeInfo.Runtime -eq "clr") {
             if (-not $NoNative) {
                 if ((Is-Elevated) -or $Ngen) {
@@ -1495,7 +1504,7 @@ function dnvm-install {
             else {
                 _WriteOut "Compiling native images for $($runtimeInfo.RuntimeName) to improve startup performance..."
                 Write-Progress -Activity "Installing runtime" -Status "Generating runtime native images" -Id 1
- 
+
                 if(Get-Command $CrossGenCommand -ErrorAction SilentlyContinue) {
                     $crossGenCommand = $CrossGenCommand
                 } else {
@@ -1546,7 +1555,7 @@ function dnvm-uninstall {
         [Parameter(Mandatory=$true, Position=0)]
         [string]$VersionOrAlias,
 
-        [Alias("arch")]
+        [Alias("arch", "a")]
         [ValidateSet("", "x86", "x64", "arm")]
         [Parameter(Mandatory=$false)]
         [string]$Architecture = "",
@@ -1621,7 +1630,7 @@ function dnvm-use {
         [ValidateSet("", "clr", "coreclr")]
         [Parameter(Mandatory=$false)]
         [string]$Runtime = "",
-        
+
         [ValidateSet("", "win", "osx", "darwin", "linux")]
         [Parameter(Mandatory=$false)]
         [string]$OS = "",
@@ -1642,8 +1651,8 @@ function dnvm-use {
         }
         return;
     }
-    
-    $runtimeInfo = Get-RuntimeAliasOrRuntimeInfo -Version:$VersionOrAlias -Architecture:$Architecture -Runtime:$Runtime -OS:$OS 
+
+    $runtimeInfo = Get-RuntimeAliasOrRuntimeInfo -Version:$VersionOrAlias -Architecture:$Architecture -Runtime:$Runtime -OS:$OS
     $runtimeFullName = $runtimeInfo.RuntimeName
     $runtimeBin = Get-RuntimePath $runtimeFullName
     if ($runtimeBin -eq $null) {
@@ -1810,19 +1819,19 @@ function Check-Runtimes(){
             }
         }
     }
-    
+
     if (-not $runtimesInstall){
         $title = "Getting started"
         $message = "It looks like you don't have any runtimes installed. Do you want us to install a $RuntimeShortFriendlyName to get you started?"
-    
+
         $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Install the latest runtime for you"
-    
+
         $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Do not install the latest runtime and continue"
-    
+
         $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-    
+
         $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-        
+
         if($result -eq 0){
             dnvm-upgrade
         }
@@ -1848,10 +1857,17 @@ if(Test-Path env:\KRE_HOME) {
 
 $cmd = $args[0]
 
+$cmdargs = @()
 if($args.Length -gt 1) {
-    $cmdargs = @($args[1..($args.Length-1)])
-} else {
-    $cmdargs = @()
+    # Combine arguments, ensuring any containing whitespace or parenthesis are correctly quoted 
+    ForEach ($arg In $args[1..($args.Length-1)]) {
+        if ($arg -match "[\s\(\)]") {
+            $cmdargs += """$arg"""
+        } else {
+            $cmdargs += $arg
+        }
+        $cmdargs += " "
+    }
 }
 
 # Can't add this as script-level arguments because they mask '-a' arguments in subcommands!
@@ -1893,199 +1909,3 @@ try {
 _WriteDebug "=== End $CommandName (Exit Code $Script:ExitCode) ==="
 _WriteDebug ""
 exit $Script:ExitCode
-
-# SIG # Begin signature block
-# MIIkCQYJKoZIhvcNAQcCoIIj+jCCI/YCAQExDzANBglghkgBZQMEAgEFADB5Bgor
-# BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCByeACx9YutuTq/
-# ls/hTzkJSiEtMoL8AQxvjZXQgGlWx6CCDZIwggYQMIID+KADAgECAhMzAAAAOI0j
-# bRYnoybgAAAAAAA4MA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNVBAYTAlVTMRMwEQYD
-# VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
-# b3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNpZ25p
-# bmcgUENBIDIwMTEwHhcNMTQxMDAxMTgxMTE2WhcNMTYwMTAxMTgxMTE2WjCBgzEL
-# MAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcTB1JlZG1v
-# bmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjENMAsGA1UECxMETU9Q
-# UjEeMBwGA1UEAxMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMIIBIjANBgkqhkiG9w0B
-# AQEFAAOCAQ8AMIIBCgKCAQEAwt7Wz+K3fxFl/7NjqfNyufEk61+kHLJEWetvnPtw
-# 22VpmquQMV7/3itkEfXtbOkAIYLDkMyCGaPjmWNlir3T1fsgo+AZf7iNPGr+yBKN
-# 5dM5701OPoaWTBGxEYSbJ5iIOy3UfRjzBeCtSwQ+Q3UZ5kbEjJ3bidgkh770Rye/
-# bY3ceLnDZaFvN+q8caadrI6PjYiRfqg3JdmBJKmI9GNG6rsgyQEv2I4M2dnt4Db7
-# ZGhN/EIvkSCpCJooSkeo8P7Zsnr92Og4AbyBRas66Boq3TmDPwfb2OGP/DksNp4B
-# n+9od8h4bz74IP+WGhC+8arQYZ6omoS/Pq6vygpZ5Y2LBQIDAQABo4IBfzCCAXsw
-# HwYDVR0lBBgwFgYIKwYBBQUHAwMGCisGAQQBgjdMCAEwHQYDVR0OBBYEFMbxyhgS
-# CySlRfWC5HUl0C8w12JzMFEGA1UdEQRKMEikRjBEMQ0wCwYDVQQLEwRNT1BSMTMw
-# MQYDVQQFEyozMTY0MitjMjJjOTkzNi1iM2M3LTQyNzEtYTRiZC1mZTAzZmE3MmMz
-# ZjAwHwYDVR0jBBgwFoAUSG5k5VAF04KqFzc3IrVtqMp1ApUwVAYDVR0fBE0wSzBJ
-# oEegRYZDaHR0cDovL3d3dy5taWNyb3NvZnQuY29tL3BraW9wcy9jcmwvTWljQ29k
-# U2lnUENBMjAxMV8yMDExLTA3LTA4LmNybDBhBggrBgEFBQcBAQRVMFMwUQYIKwYB
-# BQUHMAKGRWh0dHA6Ly93d3cubWljcm9zb2Z0LmNvbS9wa2lvcHMvY2VydHMvTWlj
-# Q29kU2lnUENBMjAxMV8yMDExLTA3LTA4LmNydDAMBgNVHRMBAf8EAjAAMA0GCSqG
-# SIb3DQEBCwUAA4ICAQCecm6ourY1Go2EsDqVN+I0zXvsz1Pk7qvGGDEWM3tPIv6T
-# dVZHTXRrmYdcLnSIcKVGb7ScG5hZEk00vtDcdbNdDDPW2AX2NRt+iUjB5YmlLTo3
-# J0ce7mjTaFpGoqyF+//Q6OjVYFXnRGtNz73epdy71XqL0+NIx0Z7dZhz+cPI7IgQ
-# C/cqLRN4Eo/+a6iYXhxJzjqmNJZi2+7m4wzZG2PH+hhh7LkACKvkzHwSpbamvWVg
-# Dh0zWTjfFuEyXH7QexIHgbR+uKld20T/ZkyeQCapTP5OiT+W0WzF2K7LJmbhv2Xj
-# 97tj+qhtKSodJ8pOJ8q28Uzq5qdtCrCRLsOEfXKAsfg+DmDZzLsbgJBPixGIXncI
-# u+OKq39vCT4rrGfBR+2yqF16PLAF9WCK1UbwVlzypyuwLhEWr+KR0t8orebVlT/4
-# uPVr/wLnudvNvP2zQMBxrkadjG7k9gVd7O4AJ4PIRnvmwjrh7xy796E3RuWGq5eu
-# dXp27p5LOwbKH6hcrI0VOSHmveHCd5mh9yTx2TgeTAv57v+RbbSKSheIKGPYUGNc
-# 56r7VYvEQYM3A0ABcGOfuLD5aEdfonKLCVMOP7uNQqATOUvCQYMvMPhbJvgfuS1O
-# eQy77Hpdnzdq2Uitdp0v6b5sNlga1ZL87N/zsV4yFKkTE/Upk/XJOBbXNedrODCC
-# B3owggVioAMCAQICCmEOkNIAAAAAAAMwDQYJKoZIhvcNAQELBQAwgYgxCzAJBgNV
-# BAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4w
-# HAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xMjAwBgNVBAMTKU1pY3Jvc29m
-# dCBSb290IENlcnRpZmljYXRlIEF1dGhvcml0eSAyMDExMB4XDTExMDcwODIwNTkw
-# OVoXDTI2MDcwODIxMDkwOVowfjELMAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hp
-# bmd0b24xEDAOBgNVBAcTB1JlZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jw
-# b3JhdGlvbjEoMCYGA1UEAxMfTWljcm9zb2Z0IENvZGUgU2lnbmluZyBQQ0EgMjAx
-# MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAKvw+nIQHC6t2G6qghBN
-# NLrytlghn0IbKmvpWlCquAY4GgRJun/DDB7dN2vGEtgL8DjCmQawyDnVARQxQtOJ
-# DXlkh36UYCRsr55JnOloXtLfm1OyCizDr9mpK656Ca/XllnKYBoF6WZ26DJSJhIv
-# 56sIUM+zRLdd2MQuA3WraPPLbfM6XKEW9Ea64DhkrG5kNXimoGMPLdNAk/jj3gcN
-# 1Vx5pUkp5w2+oBN3vpQ97/vjK1oQH01WKKJ6cuASOrdJXtjt7UORg9l7snuGG9k+
-# sYxd6IlPhBryoS9Z5JA7La4zWMW3Pv4y07MDPbGyr5I4ftKdgCz1TlaRITUlwzlu
-# ZH9TupwPrRkjhMv0ugOGjfdf8NBSv4yUh7zAIXQlXxgotswnKDglmDlKNs98sZKu
-# HCOnqWbsYR9q4ShJnV+I4iVd0yFLPlLEtVc/JAPw0XpbL9Uj43BdD1FGd7P4AOG8
-# rAKCX9vAFbO9G9RVS+c5oQ/pI0m8GLhEfEXkwcNyeuBy5yTfv0aZxe/CHFfbg43s
-# TUkwp6uO3+xbn6/83bBm4sGXgXvt1u1L50kppxMopqd9Z4DmimJ4X7IvhNdXnFy/
-# dygo8e1twyiPLI9AN0/B4YVEicQJTMXUpUMvdJX3bvh4IFgsE11glZo+TzOE2rCI
-# F96eTvSWsLxGoGyY0uDWiIwLAgMBAAGjggHtMIIB6TAQBgkrBgEEAYI3FQEEAwIB
-# ADAdBgNVHQ4EFgQUSG5k5VAF04KqFzc3IrVtqMp1ApUwGQYJKwYBBAGCNxQCBAwe
-# CgBTAHUAYgBDAEEwCwYDVR0PBAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHwYDVR0j
-# BBgwFoAUci06AjGQQ7kUBU7h6qfHMdEjiTQwWgYDVR0fBFMwUTBPoE2gS4ZJaHR0
-# cDovL2NybC5taWNyb3NvZnQuY29tL3BraS9jcmwvcHJvZHVjdHMvTWljUm9vQ2Vy
-# QXV0MjAxMV8yMDExXzAzXzIyLmNybDBeBggrBgEFBQcBAQRSMFAwTgYIKwYBBQUH
-# MAKGQmh0dHA6Ly93d3cubWljcm9zb2Z0LmNvbS9wa2kvY2VydHMvTWljUm9vQ2Vy
-# QXV0MjAxMV8yMDExXzAzXzIyLmNydDCBnwYDVR0gBIGXMIGUMIGRBgkrBgEEAYI3
-# LgMwgYMwPwYIKwYBBQUHAgEWM2h0dHA6Ly93d3cubWljcm9zb2Z0LmNvbS9wa2lv
-# cHMvZG9jcy9wcmltYXJ5Y3BzLmh0bTBABggrBgEFBQcCAjA0HjIgHQBMAGUAZwBh
-# AGwAXwBwAG8AbABpAGMAeQBfAHMAdABhAHQAZQBtAGUAbgB0AC4gHTANBgkqhkiG
-# 9w0BAQsFAAOCAgEAZ/KGpZjgVHkaLtPYdGcimwuWEeFjkplCln3SeQyQwWVfLiw+
-# +MNy0W2D/r4/6ArKO79HqaPzadtjvyI1pZddZYSQfYtGUFXYDJJ80hpLHPM8QotS
-# 0LD9a+M+By4pm+Y9G6XUtR13lDni6WTJRD14eiPzE32mkHSDjfTLJgJGKsKKELuk
-# qQUMm+1o+mgulaAqPyprWEljHwlpblqYluSD9MCP80Yr3vw70L01724lruWvJ+3Q
-# 3fMOr5kol5hNDj0L8giJ1h/DMhji8MUtzluetEk5CsYKwsatruWy2dsViFFFWDgy
-# cScaf7H0J/jeLDogaZiyWYlobm+nt3TDQAUGpgEqKD6CPxNNZgvAs0314Y9/HG8V
-# fUWnduVAKmWjw11SYobDHWM2l4bf2vP48hahmifhzaWX0O5dY0HjWwechz4GdwbR
-# BrF1HxS+YWG18NzGGwS+30HHDiju3mUv7Jf2oVyW2ADWoUa9WfOXpQlLSBCZgB/Q
-# ACnFsZulP0V3HjXG0qKin3p6IvpIlR+r+0cjgPWe+L9rt0uX4ut1eBrs6jeZeRhL
-# /9azI2h15q/6/IvrC4DqaTuv/DDtBEyO3991bWORPdGdVk5Pv4BXIqF4ETIheu9B
-# CrE/+6jMpF3BoYibV3FWTkhFwELJm3ZbCoBIa/15n8G9bW1qyVJzEw16UM0xghXN
-# MIIVyQIBATCBlTB+MQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3RvbjEQ
-# MA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0aW9u
-# MSgwJgYDVQQDEx9NaWNyb3NvZnQgQ29kZSBTaWduaW5nIFBDQSAyMDExAhMzAAAA
-# OI0jbRYnoybgAAAAAAA4MA0GCWCGSAFlAwQCAQUAoIG6MBkGCSqGSIb3DQEJAzEM
-# BgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqG
-# SIb3DQEJBDEiBCB3z50tiUvPa0AhMCX0l/Ot825Ob3FfymK5FOFGe7F1UjBOBgor
-# BgEEAYI3AgEMMUAwPqAkgCIATQBpAGMAcgBvAHMAbwBmAHQAIABBAFMAUAAuAE4A
-# RQBUoRaAFGh0dHA6Ly93d3cuYXNwLm5ldC8gMA0GCSqGSIb3DQEBAQUABIIBAAfj
-# M8Zw8p4N3HAYQ+WoqNPwd/ansDCAXrf/fbLt4ErEJ2FPz6QNrJC3iYj7Fmzq8WX1
-# Rq9VeU+a5vpQgaD+Zfs+BIpJ41/s2M5951Ht/eUNNQJsqZ1R6ceS15qpUJV/DRUT
-# JU2yA8LsZVTVBQWmkx+CM46Vp4A4RitEBPc5fD/xNUdTZGAik/2mXsb89ff9I6O3
-# Az3Mbh4AMfwj60lZCch/mTCb2fQEZSM3PJV34E7TjK8Hlma4i4/4rdRENjg7WE3t
-# 7IYJHInn90YnZnO0c9fGnA6EiOjAtmK1tl2vQY9w8z5r4Df0UQxqBt1Dx17thJNG
-# eHDdH4/Z4YKnCctm5u+hghNLMIITRwYKKwYBBAGCNwMDATGCEzcwghMzBgkqhkiG
-# 9w0BBwKgghMkMIITIAIBAzEPMA0GCWCGSAFlAwQCAQUAMIIBOwYLKoZIhvcNAQkQ
-# AQSgggEqBIIBJjCCASICAQEGCisGAQQBhFkKAwEwMTANBglghkgBZQMEAgEFAAQg
-# Rwq5syRQsP9Kjb6r4HaCDdipry44lK4F5sbgb3Qda2gCBlX5oY37ahgRMjAxNTEw
-# MTAwODAzNTkuNFowBwIBAYACAfSggbmkgbYwgbMxCzAJBgNVBAYTAlVTMRMwEQYD
-# VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
-# b3NvZnQgQ29ycG9yYXRpb24xDTALBgNVBAsTBE1PUFIxJzAlBgNVBAsTHm5DaXBo
-# ZXIgRFNFIEVTTjpDMEY0LTMwODYtREVGODElMCMGA1UEAxMcTWljcm9zb2Z0IFRp
-# bWUtU3RhbXAgU2VydmljZaCCDtAwggZxMIIEWaADAgECAgphCYEqAAAAAAACMA0G
-# CSqGSIb3DQEBCwUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3Rv
-# bjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0
-# aW9uMTIwMAYDVQQDEylNaWNyb3NvZnQgUm9vdCBDZXJ0aWZpY2F0ZSBBdXRob3Jp
-# dHkgMjAxMDAeFw0xMDA3MDEyMTM2NTVaFw0yNTA3MDEyMTQ2NTVaMHwxCzAJBgNV
-# BAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4w
-# HAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29m
-# dCBUaW1lLVN0YW1wIFBDQSAyMDEwMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
-# CgKCAQEAqR0NvHcRijog7PwTl/X6f2mUa3RUENWlCgCChfvtfGhLLF/Fw+Vhwna3
-# PmYrW/AVUycEMR9BGxqVHc4JE458YTBZsTBED/FgiIRUQwzXTbg4CLNC3ZOs1nMw
-# VyaCo0UN0Or1R4HNvyRgMlhgRvJYR4YyhB50YWeRX4FUsc+TTJLBxKZd0WETbijG
-# GvmGgLvfYfxGwScdJGcSchohiq9LZIlQYrFd/XcfPfBXday9ikJNQFHRD5wGPmd/
-# 9WbAA5ZEfu/QS/1u5ZrKsajyeioKMfDaTgaRtogINeh4HLDpmc085y9Euqf03GS9
-# pAHBIAmTeM38vMDJRF1eFpwBBU8iTQIDAQABo4IB5jCCAeIwEAYJKwYBBAGCNxUB
-# BAMCAQAwHQYDVR0OBBYEFNVjOlyKMZDzQ3t8RhvFM2hahW1VMBkGCSsGAQQBgjcU
-# AgQMHgoAUwB1AGIAQwBBMAsGA1UdDwQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MB8G
-# A1UdIwQYMBaAFNX2VsuP6KJcYmjRPZSQW9fOmhjEMFYGA1UdHwRPME0wS6BJoEeG
-# RWh0dHA6Ly9jcmwubWljcm9zb2Z0LmNvbS9wa2kvY3JsL3Byb2R1Y3RzL01pY1Jv
-# b0NlckF1dF8yMDEwLTA2LTIzLmNybDBaBggrBgEFBQcBAQROMEwwSgYIKwYBBQUH
-# MAKGPmh0dHA6Ly93d3cubWljcm9zb2Z0LmNvbS9wa2kvY2VydHMvTWljUm9vQ2Vy
-# QXV0XzIwMTAtMDYtMjMuY3J0MIGgBgNVHSABAf8EgZUwgZIwgY8GCSsGAQQBgjcu
-# AzCBgTA9BggrBgEFBQcCARYxaHR0cDovL3d3dy5taWNyb3NvZnQuY29tL1BLSS9k
-# b2NzL0NQUy9kZWZhdWx0Lmh0bTBABggrBgEFBQcCAjA0HjIgHQBMAGUAZwBhAGwA
-# XwBQAG8AbABpAGMAeQBfAFMAdABhAHQAZQBtAGUAbgB0AC4gHTANBgkqhkiG9w0B
-# AQsFAAOCAgEAB+aIUQ3ixuCYP4FxAz2do6Ehb7Prpsz1Mb7PBeKp/vpXbRkws8LF
-# Zslq3/Xn8Hi9x6ieJeP5vO1rVFcIK1GCRBL7uVOMzPRgEop2zEBAQZvcXBf/XPle
-# FzWYJFZLdO9CEMivv3/Gf/I3fVo/HPKZeUqRUgCvOA8X9S95gWXZqbVr5MfO9sp6
-# AG9LMEQkIjzP7QOllo9ZKby2/QThcJ8ySif9Va8v/rbljjO7Yl+a21dA6fHOmWaQ
-# jP9qYn/dxUoLkSbiOewZSnFjnXshbcOco6I8+n99lmqQeKZt0uGc+R38ONiU9Mal
-# CpaGpL2eGq4EQoO4tYCbIjggtSXlZOz39L9+Y1klD3ouOVd2onGqBooPiRa6YacR
-# y5rYDkeagMXQzafQ732D8OE7cQnfXXSYIghh2rBQHm+98eEA3+cxB6STOvdlR3jo
-# +KhIq/fecn5ha293qYHLpwmsObvsxsvYgrRyzR30uIUBHoD7G4kqVDmyW9rIDVWZ
-# eodzOwjmmC3qjeAzLhIp9cAvVCch98isTtoouLGp25ayp0Kiyc8ZQU3ghvkqmqMR
-# ZjDTu3QyS99je/WZii8bxyGvWbWu3EQ8l1Bx16HSxVXjad5XwdHeMMD9zOZN+w2/
-# XU/pnR4ZOC+8z1gFLu8NoFA12u8JJxzVs341Hgi62jbb01+P3nSISRIwggTaMIID
-# wqADAgECAhMzAAAAUpo7I6rcf7RvAAAAAABSMA0GCSqGSIb3DQEBCwUAMHwxCzAJ
-# BgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25k
-# MR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jv
-# c29mdCBUaW1lLVN0YW1wIFBDQSAyMDEwMB4XDTE1MDMyMDE3MzIyNloXDTE2MDYy
-# MDE3MzIyNlowgbMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAw
-# DgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24x
-# DTALBgNVBAsTBE1PUFIxJzAlBgNVBAsTHm5DaXBoZXIgRFNFIEVTTjpDMEY0LTMw
-# ODYtREVGODElMCMGA1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2VydmljZTCC
-# ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOLvsXs51YcPijzAWkdxnm+V
-# jjFEYge/o1AtSNy0sAYcUgmZrBbN/kNd5Srb0zeC0UyhTGIZYqVQI/Y1CxhpJc/L
-# GfrExbJcVll/zPY/T+GCFfHgWu3JmYJ7zcZ6r7iGFIo5UY3rZFUx/FW65QzJ//v+
-# JnStSjLnHR5WijiQ75TrIFfyd+gAcxuHTr8rsC+tsLNGkkppAM0g7c8XaOjuHler
-# P3yIFtUWl46h8nxel0nCRCd3V2LFtZI2/SI1wmbEgdtYa51qqgTDNAf9gpsGScVi
-# a60ioHraa/cIOc8XHsOD69O6+euItf93ejImv9gqO0g1q7JyBsTDnYFwri+dA18C
-# AwEAAaOCARswggEXMB0GA1UdDgQWBBQxFRmGUGiyTk5Nmq3QAcbiU8SD/TAfBgNV
-# HSMEGDAWgBTVYzpcijGQ80N7fEYbxTNoWoVtVTBWBgNVHR8ETzBNMEugSaBHhkVo
-# dHRwOi8vY3JsLm1pY3Jvc29mdC5jb20vcGtpL2NybC9wcm9kdWN0cy9NaWNUaW1T
-# dGFQQ0FfMjAxMC0wNy0wMS5jcmwwWgYIKwYBBQUHAQEETjBMMEoGCCsGAQUFBzAC
-# hj5odHRwOi8vd3d3Lm1pY3Jvc29mdC5jb20vcGtpL2NlcnRzL01pY1RpbVN0YVBD
-# QV8yMDEwLTA3LTAxLmNydDAMBgNVHRMBAf8EAjAAMBMGA1UdJQQMMAoGCCsGAQUF
-# BwMIMA0GCSqGSIb3DQEBCwUAA4IBAQAM82+vetzMQYRHLKf2aET8YLq0D1grM61R
-# 7UYUQnIwMyEXabVJS+9dT+/nnc5Vb7/ypczj0/TGnKp4D7chbGCAB9YXuaw2Hth2
-# TRK5IOUmfjodsnVS3syFjCtLedp5n1fcDfEFg3dsIC6BSjFSoaZJeqkMUzzzr5KI
-# QQhpNfMtvdcBhq6HV2kHVJCRlT1TF/w2CfkazBzS1SBJxDY0zY94HlPtH/RyQpWF
-# 5B3ydI7X7ga1gz7gH0Wa/gNmx48KRchzuPL8ssbaH9f7TmMY1BlPnTN4GAJqynuG
-# nrYFjUMtqf2RkOVP87QlDPBrkK/gOLEmDxmX7OqlvX9RMQKmLAU2oYIDeTCCAmEC
-# AQEwgeOhgbmkgbYwgbMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9u
-# MRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRp
-# b24xDTALBgNVBAsTBE1PUFIxJzAlBgNVBAsTHm5DaXBoZXIgRFNFIEVTTjpDMEY0
-# LTMwODYtREVGODElMCMGA1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2Vydmlj
-# ZaIlCgEBMAkGBSsOAwIaBQADFQB6NOnIZOKf7B65PSPqxHeDbDDPvKCBwjCBv6SB
-# vDCBuTELMAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcT
-# B1JlZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjENMAsGA1UE
-# CxMETU9QUjEnMCUGA1UECxMebkNpcGhlciBOVFMgRVNOOjU3RjYtQzFFMC01NTRD
-# MSswKQYDVQQDEyJNaWNyb3NvZnQgVGltZSBTb3VyY2UgTWFzdGVyIENsb2NrMA0G
-# CSqGSIb3DQEBBQUAAgUA2cLNuTAiGA8yMDE1MTAwOTIzMzUyMVoYDzIwMTUxMDEw
-# MjMzNTIxWjB3MD0GCisGAQQBhFkKBAExLzAtMAoCBQDZws25AgEAMAoCAQACAggi
-# AgH/MAcCAQACAhiZMAoCBQDZxB85AgEAMDYGCisGAQQBhFkKBAIxKDAmMAwGCisG
-# AQQBhFkKAwGgCjAIAgEAAgMW42ChCjAIAgEAAgMHoSAwDQYJKoZIhvcNAQEFBQAD
-# ggEBAJWg6ueIgS+Dnd+xXcOxvyF7pIwmjA93W0WRQT7YP1auE2XX6qW77XuP9P6E
-# xMSRGzbDgo5YdjxFWxAanFOJ9lJsdWGAaPPrGo5b4rWwd/4iRLPmj1clanZ1MOPA
-# zyYgLkANNq+f7NMXpkny2dhFogLqTI1k1JuqHoXNrhM9fKFOgf9UmvXoH8aocuCz
-# DXbOvhBxzmPB1DOrA2hry8gHege2Eh1DaEvuzim+gDoZrvx/0eCnWyZnPlLRbMsG
-# BORq9qk9HHZ2tzS4Cxcqacm4ZIEXXgZIZw+8QzqNQLfcig73qdyZ3UvIHBdLsBgX
-# 07baA4rYib/PY3MOF1qxdISdHn4xggL1MIIC8QIBATCBkzB8MQswCQYDVQQGEwJV
-# UzETMBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UE
-# ChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMSYwJAYDVQQDEx1NaWNyb3NvZnQgVGlt
-# ZS1TdGFtcCBQQ0EgMjAxMAITMwAAAFKaOyOq3H+0bwAAAAAAUjANBglghkgBZQME
-# AgEFAKCCATIwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMC8GCSqGSIb3DQEJ
-# BDEiBCB4BBlRFV0lRcEY3BmljKy9K8HIpXu5nIHkuzlrQfHwJTCB4gYLKoZIhvcN
-# AQkQAgwxgdIwgc8wgcwwgbEEFHo06chk4p/sHrk9I+rEd4NsMM+8MIGYMIGApH4w
-# fDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcTB1Jl
-# ZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjEmMCQGA1UEAxMd
-# TWljcm9zb2Z0IFRpbWUtU3RhbXAgUENBIDIwMTACEzMAAABSmjsjqtx/tG8AAAAA
-# AFIwFgQU1KW7+xMV6mNLacIaTQEN6LWjGj4wDQYJKoZIhvcNAQELBQAEggEAhO1U
-# NLYXd8lrtovcgCU4PX0u1FI3oLL2PLJ9s1yzrtuCBfjTR62yIIg216typYcMnO6C
-# 78h0UDSMrJkjQ7k6JXKbq81kC1vo1K/SzJ2IZ/2GryLi0JnjXz4N1mO7chmp0EMO
-# om7YTiBNuIA7S4D0xPYTTT0mvp/JVZ0taa+eyqUIx/dZM18+aUbHn9KhqJj11C/a
-# ov4h30oVWaJE4MzOI0T3rHcKiVLYcaZmQIRiNXcMOZFZmScokLq6vUZLAQkDKYe2
-# PyRVxd2SM4vvccRpzAR/Y/mVVySzgpQhy0HFM0SE0+20CDtfieRPpuF/v4gBwvsG
-# 1kvafPdw+wdiT2O+wQ==
-# SIG # End signature block
