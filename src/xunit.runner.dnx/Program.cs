@@ -8,8 +8,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Microsoft.Dnx.Runtime;
 using Microsoft.Dnx.Testing.Abstractions;
+using Microsoft.Extensions.PlatformAbstractions;
 using Xunit.Abstractions;
 using VsTestCase = Microsoft.Dnx.Testing.Abstractions.Test;
 
@@ -29,12 +29,14 @@ namespace Xunit.Runner.Dnx
         readonly IServiceProvider services;
         readonly IApplicationShutdown shutdown;
 
-        public Program(IApplicationEnvironment appEnv, IServiceProvider services, ILibraryManager libraryManager, IApplicationShutdown shutdown)
+        public Program(IServiceProvider services)
         {
-            this.appEnv = appEnv;
+            Guard.ArgumentNotNull(nameof(services), services);
+
             this.services = services;
-            this.libraryManager = libraryManager;
-            this.shutdown = shutdown;
+            appEnv = PlatformServices.Default.Application;
+            libraryManager = PlatformServices.Default.LibraryManager;
+            shutdown = (IApplicationShutdown)services.GetService(typeof(IApplicationShutdown));
         }
 
         [STAThread]

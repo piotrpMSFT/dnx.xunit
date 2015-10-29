@@ -10,13 +10,13 @@ echo "Installing .NET Execution Environment..."
 echo ""
 
 . tools/dnvm.sh
-dnvm install 1.0.0-rc1-15838 -r coreclr -u
+dnvm install 1.0.0-rc1-16048 -r coreclr -u
 if [ $? -ne 0 ]; then
   echo >&2 ".NET Execution Environment installation has failed."
   exit 1
 fi
 
-dnvm install 1.0.0-rc1-15838 -u
+dnvm install 1.0.0-rc1-16048 -u
 if [ $? -ne 0 ]; then
   echo >&2 ".NET Execution Environment installation has failed."
   exit 1
@@ -26,7 +26,7 @@ echo ""
 echo "Restoring packages..."
 echo ""
 
-dnvm use 1.0.0-rc1-15838
+dnvm use 1.0.0-rc1-16048
 dnu restore
 if [ $? -ne 0 ]; then
   echo >&2 "Package restore has failed."
@@ -52,7 +52,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-dnvm use 1.0.0-rc1-15838 -r coreclr
+dnvm use 1.0.0-rc1-16048 -r coreclr
 dnx -p test/test.xunit.runner.dnx test -parallel none
 if [ $? -ne 0 ]; then
   echo >&2 "Running tests on CoreCLR has failed."
