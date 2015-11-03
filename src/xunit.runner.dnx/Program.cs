@@ -55,15 +55,16 @@ namespace Xunit.Runner.Dnx
                     return 1;
                 }
 
-                shutdown.ShutdownRequested.Register(() =>
-                {
-                    Console.WriteLine("Execution was cancelled, exiting.");
+                if (shutdown != null)
+                    shutdown.ShutdownRequested.Register(() =>
+                    {
+                        Console.WriteLine("Execution was cancelled, exiting.");
 #if DNXCORE50
-                    Environment.FailFast(null);
+                        Environment.FailFast(null);
 #else
-                    Environment.Exit(1);
+                        Environment.Exit(1);
 #endif
-                });
+                    });
 
 #if !DNXCORE50
                 AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
