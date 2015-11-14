@@ -52,7 +52,7 @@ namespace Xunit.Runner.Dnx
                 {
                     PrintHeader();
                     PrintUsage(reporters);
-                    return 1;
+                    return 2;
                 }
 
                 if (shutdown != null)
@@ -116,17 +116,17 @@ namespace Xunit.Runner.Dnx
                     Console.WriteLine();
                 }
 
-                return failCount;
+                return failCount > 0 ? 1 : 0;
             }
             catch (ArgumentException ex)
             {
                 Console.WriteLine("error: {0}", ex.Message);
-                return 1;
+                return 3;
             }
             catch (BadImageFormatException ex)
             {
                 Console.WriteLine("{0}", ex.Message);
-                return 1;
+                return 4;
             }
             finally
             {
