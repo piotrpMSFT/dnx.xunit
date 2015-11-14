@@ -6,6 +6,7 @@
     "iconUrl": "https://raw.githubusercontent.com/xunit/media/master/logo-512-transparent.png",
     "licenseUrl": "https://raw.githubusercontent.com/xunit/xunit/master/license.txt",
     "requireLicenseAcceptance": false,
+    "developmentDependency": true,
     "version": "99.99.99-dev",
     "compilationOptions": {
         "warningsAsErrors": true
