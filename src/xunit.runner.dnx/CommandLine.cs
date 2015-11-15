@@ -271,6 +271,9 @@ namespace Xunit.Runner.Dnx
                     // ...or an result output file
                     else
                     {
+                        if (!TransformFactory.AvailableTransforms.Any(t => t.CommandLine.Equals(optionName, StringComparison.OrdinalIgnoreCase)))
+                            throw new ArgumentException($"unknown option: {option.Key}");
+
                         if (option.Value == null)
                             throw new ArgumentException(string.Format("missing filename for {0}", option.Key));
 
