@@ -8,9 +8,9 @@ namespace Xunit.Runner.Dnx
     {
         private readonly TestHostSourceInformationProvider provider;
 
-        public SourceInformationProviderAdapater(IServiceProvider services)
+        public SourceInformationProviderAdapater(TestHostSourceInformationProvider provider)
         {
-            provider = (TestHostSourceInformationProvider)services.GetService(typeof(TestHostSourceInformationProvider));
+            this.provider = provider;
         }
 
         public void Dispose() { }

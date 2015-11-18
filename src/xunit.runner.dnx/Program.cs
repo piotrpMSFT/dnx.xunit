@@ -26,21 +26,28 @@ namespace Xunit.Runner.Dnx
         readonly ILibraryManager libraryManager;
         IRunnerLogger logger;
         IMessageSink reporterMessageHandler;
-        readonly IServiceProvider services;
-        readonly IApplicationShutdown shutdown;
+        TestHostServices testHostServices;
 
-        public Program(IServiceProvider services)
+        public Program(TestHostServices hostServices)
         {
-            Guard.ArgumentNotNull(nameof(services), services);
-
-            this.services = services;
+            testHostServices = hostServices;
             appEnv = PlatformServices.Default.Application;
             libraryManager = PlatformServices.Default.LibraryManager;
-            shutdown = (IApplicationShutdown)services.GetService(typeof(IApplicationShutdown));
         }
 
         [STAThread]
-        public int Main(string[] args)
+        public static int TestMain(TestHostServices services, string[] args)
+        {
+            return new Program(services).Run(args);
+        }
+
+        [STAThread]
+        public static int Main(string[] args)
+        {
+            return new Program(null).Run(args);
+        }
+
+        public int Run(string[] args)
         {
             args = Enumerable.Repeat(Path.Combine(appEnv.ApplicationBasePath, appEnv.ApplicationName + ".dll"), 1).Concat(args).ToArray();
 
@@ -55,19 +62,10 @@ namespace Xunit.Runner.Dnx
                     return 2;
                 }
 
-                if (shutdown != null)
-                    shutdown.ShutdownRequested.Register(() =>
-                    {
-                        Console.WriteLine("Execution was cancelled, exiting.");
-#if DNXCORE50
-                        Environment.FailFast(null);
-#else
-                        Environment.Exit(1);
-#endif
-                    });
-
 #if !DNXCORE50
                 AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+#endif
+
                 Console.CancelKeyPress += (sender, e) =>
                 {
                     if (!cancel)
@@ -77,7 +75,6 @@ namespace Xunit.Runner.Dnx
                         e.Cancel = true;
                     }
                 };
-#endif
 
                 var defaultDirectory = Directory.GetCurrentDirectory();
                 if (!defaultDirectory.EndsWith(new String(new[] { Path.DirectorySeparatorChar })))
@@ -95,6 +92,11 @@ namespace Xunit.Runner.Dnx
                     return -1;
                 }
 #endif
+                if (commandLine.DesignTime && testHostServices == null)
+                {
+                    Console.WriteLine("Test host services not passed for design time run");
+                    return -1;
+                }
 
                 logger = new ConsoleRunnerLogger(!commandLine.NoColor);
                 reporterMessageHandler = commandLine.Reporter.CreateMessageHandler(logger);
@@ -343,7 +345,7 @@ namespace Xunit.Runner.Dnx
 
                 var assemblyDisplayName = Path.GetFileNameWithoutExtension(assembly.AssemblyFilename);
                 var diagnosticMessageVisitor = new DiagnosticMessageVisitor(consoleLock, assemblyDisplayName, assembly.Configuration.DiagnosticMessagesOrDefault, noColor);
-                var sourceInformationProvider = new SourceInformationProviderAdapater(services);
+                var sourceInformationProvider = new SourceInformationProviderAdapater(testHostServices?.SourceInformationProvider);
 
                 using (var controller = new XunitFrontController(AppDomainSupport.Denied, assembly.AssemblyFilename, assembly.ConfigFilename, false, diagnosticMessageSink: diagnosticMessageVisitor, sourceInformationProvider: sourceInformationProvider))
                 using (var discoveryVisitor = new TestDiscoveryVisitor())
@@ -366,7 +368,7 @@ namespace Xunit.Runner.Dnx
                         {
                             if (designTime)
                             {
-                                var sink = (ITestDiscoverySink)services.GetService(typeof(ITestDiscoverySink));
+                                var sink = testHostServices.TestDiscoverySink;
 
                                 foreach (var testcase in vsTestCases.Values)
                                 {
@@ -390,8 +392,7 @@ namespace Xunit.Runner.Dnx
 
                     if (designTime)
                     {
-                        var sink = (ITestExecutionSink)services.GetService(typeof(ITestExecutionSink));
-                        resultsVisitor = new DesignTimeExecutionVisitor(sink, vsTestCases, reporterMessageHandler);
+                        resultsVisitor = new DesignTimeExecutionVisitor(testHostServices.TestExecutionSink, vsTestCases, reporterMessageHandler);
                     }
                     else
                         resultsVisitor = new XmlAggregateVisitor(reporterMessageHandler, completionMessages, assemblyElement, () => cancel);
