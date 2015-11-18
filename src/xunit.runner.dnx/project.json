@@ -23,17 +23,16 @@
         },
         "dnxcore50": {
             "dependencies": {
-                "System.Security.Cryptography.Algorithms": "4.0.0-beta-*",
-                "System.Threading.ThreadPool": "4.0.10-beta-*",
-                "System.Xml.XDocument": "4.0.11-beta-*"
+                "System.Security.Cryptography.Algorithms": "4.0.0-beta-23516",
+                "System.Threading.ThreadPool": "4.0.10-beta-23516",
+                "System.Xml.XDocument": "4.0.11-beta-23516"
             }
         }
     },
     "dependencies": {
-        "Microsoft.Dnx.Testing.Abstractions": "1.0.0-rc1-*",
-        "Microsoft.Dnx.TestHost": "1.0.0-rc1-*",
-        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*",
-        "xunit.runner.utility": "2.1.0",
+        "Microsoft.Dnx.Testing.Abstractions": "1.0.0-rc1-final",
+        "Microsoft.Dnx.TestHost": "1.0.0-rc1-final",
+        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-final",
         "xunit.runner.reporters": "2.1.0"
     },
     "repository": {
