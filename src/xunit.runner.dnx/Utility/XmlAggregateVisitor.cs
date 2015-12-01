@@ -8,8 +8,8 @@ namespace Xunit
 {
     public class XmlAggregateVisitor : XmlTestExecutionVisitor, IExecutionVisitor
     {
-        readonly ConcurrentDictionary<string, ExecutionSummary> completionMessages;
-        readonly IMessageSink innerMessageSink;
+        readonly ConcurrentDictionary<string, ExecutionSummary> _completionMessages;
+        readonly IMessageSink _innerMessageSink;
 
         public XmlAggregateVisitor(IMessageSink innerMessageSink,
                                    ConcurrentDictionary<string, ExecutionSummary> completionMessages,
@@ -17,8 +17,8 @@ namespace Xunit
                                    Func<bool> cancelThunk)
             : base(assemblyElement, cancelThunk)
         {
-            this.innerMessageSink = innerMessageSink;
-            this.completionMessages = completionMessages;
+            _innerMessageSink = innerMessageSink;
+            _completionMessages = completionMessages;
 
             ExecutionSummary = new ExecutionSummary();
         }
@@ -38,8 +38,8 @@ namespace Xunit
                 Errors = Errors
             };
 
-            if (completionMessages != null)
-                completionMessages.TryAdd(Path.GetFileNameWithoutExtension(assemblyFinished.TestAssembly.Assembly.AssemblyPath), ExecutionSummary);
+            if (_completionMessages != null)
+                _completionMessages.TryAdd(Path.GetFileNameWithoutExtension(assemblyFinished.TestAssembly.Assembly.AssemblyPath), ExecutionSummary);
 
             return result;
         }
@@ -47,7 +47,7 @@ namespace Xunit
         public override bool OnMessage(IMessageSinkMessage message)
         {
             var result = base.OnMessage(message);
-            result = innerMessageSink.OnMessage(message) || result;
+            result = _innerMessageSink.OnMessage(message) || result;
             return result;
         }
     }

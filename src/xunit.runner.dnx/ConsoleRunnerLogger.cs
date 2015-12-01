@@ -8,8 +8,8 @@ namespace Xunit
     /// </summary>
     public class ConsoleRunnerLogger : IRunnerLogger
     {
-        readonly object lockObject = new object();
-        readonly bool useColors;
+        readonly object _lockObject = new object();
+        readonly bool _useColors;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConsoleRunnerLogger"/> class.
@@ -18,13 +18,13 @@ namespace Xunit
         /// logging messages.</param>
         public ConsoleRunnerLogger(bool useColors)
         {
-            this.useColors = useColors;
+            _useColors = useColors;
         }
 
         /// <inheritdoc/>
         public object LockObject
         {
-            get { return lockObject; }
+            get { return _lockObject; }
         }
 
         /// <inheritdoc/>
@@ -61,7 +61,7 @@ namespace Xunit
 
         IDisposable SetColor(ConsoleColor color)
         {
-            return useColors ? new ColorRestorer(color) : null;
+            return _useColors ? new ColorRestorer(color) : null;
         }
 
         class ColorRestorer : IDisposable

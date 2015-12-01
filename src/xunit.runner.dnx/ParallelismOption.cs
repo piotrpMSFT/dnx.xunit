@@ -1,10 +1,10 @@
-﻿namespace Xunit.Runner.Dnx
+﻿namespace Xunit.Runner.DotNet
 {
     public enum ParallelismOption
     {
-        none,
-        collections,
-        assemblies,
-        all
+        None,
+        Collections,
+        Assemblies,
+        All
     }
 }

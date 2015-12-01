@@ -8,20 +8,20 @@ namespace Xunit
 {
     public class XmlTestExecutionVisitor : TestMessageVisitor<ITestAssemblyFinished>
     {
-        readonly XElement assemblyElement;
-        readonly XElement errorsElement;
-        readonly ConcurrentDictionary<ITestCollection, XElement> testCollectionElements = new ConcurrentDictionary<ITestCollection, XElement>();
+        readonly XElement _assemblyElement;
+        readonly XElement _errorsElement;
+        readonly ConcurrentDictionary<ITestCollection, XElement> _testCollectionElements = new ConcurrentDictionary<ITestCollection, XElement>();
 
         public XmlTestExecutionVisitor(XElement assemblyElement, Func<bool> cancelThunk)
         {
             CancelThunk = cancelThunk ?? (() => false);
 
-            this.assemblyElement = assemblyElement;
+            _assemblyElement = assemblyElement;
 
-            if (this.assemblyElement != null)
+            if (_assemblyElement != null)
             {
-                errorsElement = new XElement("errors");
-                this.assemblyElement.Add(errorsElement);
+                _errorsElement = new XElement("errors");
+                _assemblyElement.Add(_errorsElement);
             }
         }
 
@@ -80,7 +80,7 @@ namespace Xunit
 
         XElement GetTestCollectionElement(ITestCollection testCollection)
         {
-            return testCollectionElements.GetOrAdd(testCollection, tc => new XElement("collection"));
+            return _testCollectionElements.GetOrAdd(testCollection, tc => new XElement("collection"));
         }
 
         public override bool OnMessage(IMessageSinkMessage message)
@@ -99,9 +99,9 @@ namespace Xunit
             Skipped += assemblyFinished.TestsSkipped;
             Time += assemblyFinished.ExecutionTime;
 
-            if (assemblyElement != null)
+            if (_assemblyElement != null)
             {
-                assemblyElement.Add(
+                _assemblyElement.Add(
                     new XAttribute("total", Total),
                     new XAttribute("passed", Total - Failed - Skipped),
                     new XAttribute("failed", Failed),
@@ -110,8 +110,8 @@ namespace Xunit
                     new XAttribute("errors", Errors)
                 );
 
-                foreach (var element in testCollectionElements.Values)
-                    assemblyElement.Add(element);
+                foreach (var element in _testCollectionElements.Values)
+                    _assemblyElement.Add(element);
             }
 
             return base.Visit(assemblyFinished);
@@ -119,9 +119,9 @@ namespace Xunit
 
         protected override bool Visit(ITestAssemblyStarting assemblyStarting)
         {
-            if (assemblyElement != null)
+            if (_assemblyElement != null)
             {
-                assemblyElement.Add(
+                _assemblyElement.Add(
                     new XAttribute("name", assemblyStarting.TestAssembly.Assembly.AssemblyPath),
                     new XAttribute("environment", assemblyStarting.TestEnvironment),
                     new XAttribute("test-framework", assemblyStarting.TestFrameworkDisplayName),
@@ -130,7 +130,7 @@ namespace Xunit
                 );
 
                 if (assemblyStarting.TestAssembly.ConfigFileName != null)
-                    assemblyElement.Add(new XAttribute("config-file", assemblyStarting.TestAssembly.ConfigFileName));
+                    _assemblyElement.Add(new XAttribute("config-file", assemblyStarting.TestAssembly.ConfigFileName));
             }
 
             return base.Visit(assemblyStarting);
@@ -138,7 +138,7 @@ namespace Xunit
 
         protected override bool Visit(ITestCollectionFinished testCollectionFinished)
         {
-            if (assemblyElement != null)
+            if (_assemblyElement != null)
             {
                 var collectionElement = GetTestCollectionElement(testCollectionFinished.TestCollection);
                 collectionElement.Add(
@@ -156,7 +156,7 @@ namespace Xunit
 
         protected override bool Visit(ITestFailed testFailed)
         {
-            if (assemblyElement != null)
+            if (_assemblyElement != null)
             {
                 var testElement = CreateTestResultElement(testFailed, "Fail");
                 testElement.Add(CreateFailureElement(testFailed));
@@ -167,7 +167,7 @@ namespace Xunit
 
         protected override bool Visit(ITestPassed testPassed)
         {
-            if (assemblyElement != null)
+            if (_assemblyElement != null)
                 CreateTestResultElement(testPassed, "Pass");
 
             return base.Visit(testPassed);
@@ -175,7 +175,7 @@ namespace Xunit
 
         protected override bool Visit(ITestSkipped testSkipped)
         {
-            if (assemblyElement != null)
+            if (_assemblyElement != null)
             {
                 var testElement = CreateTestResultElement(testSkipped, "Skip");
                 testElement.Add(new XElement("reason", new XCData(XmlEscape(testSkipped.Reason))));
@@ -237,14 +237,14 @@ namespace Xunit
         {
             Errors++;
 
-            if (errorsElement == null)
+            if (_errorsElement == null)
                 return;
 
             var errorElement = new XElement("error", new XAttribute("type", type), CreateFailureElement(failureInfo));
             if (name != null)
                 errorElement.Add(new XAttribute("name", name));
 
-            errorsElement.Add(errorElement);
+            _errorsElement.Add(errorElement);
         }
 
         static XElement CreateFailureElement(IFailureInformation failureInfo)

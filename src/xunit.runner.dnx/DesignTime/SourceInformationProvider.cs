@@ -1,30 +1,29 @@
-﻿using System;
-using Xunit.Abstractions;
-using TestHostSourceInformationProvider = Microsoft.Dnx.Testing.Abstractions.ISourceInformationProvider;
+﻿using Xunit.Abstractions;
+using TestHostSourceInformationProvider = Microsoft.Extensions.Testing.Abstractions.ISourceInformationProvider;
 
-namespace Xunit.Runner.Dnx
+namespace Xunit.Runner.DotNet
 {
     public class SourceInformationProviderAdapater : ISourceInformationProvider
     {
-        private readonly TestHostSourceInformationProvider provider;
+        private readonly TestHostSourceInformationProvider _provider;
 
         public SourceInformationProviderAdapater(TestHostSourceInformationProvider provider)
         {
-            this.provider = provider;
+            _provider = provider;
         }
 
         public void Dispose() { }
 
         public ISourceInformation GetSourceInformation(ITestCase testCase)
         {
-            if (provider == null)
+            if (_provider == null)
                 return null;
 
             var reflectionMethodInfo = testCase.TestMethod.Method as IReflectionMethodInfo;
             if (reflectionMethodInfo == null)
                 return null;
 
-            var innerInformation = provider.GetSourceInformation(reflectionMethodInfo.MethodInfo);
+            var innerInformation = _provider.GetSourceInformation(reflectionMethodInfo.MethodInfo);
             if (innerInformation == null)
                 return null;
 

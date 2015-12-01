@@ -4,27 +4,27 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace Xunit.Runner.Dnx
+namespace Xunit.Runner.DotNet
 {
     public class TransformFactory
     {
-        static readonly TransformFactory instance = new TransformFactory();
+        static readonly TransformFactory Instance = new TransformFactory();
 
-        readonly Dictionary<string, Transform> availableTransforms = new Dictionary<string, Transform>(StringComparer.OrdinalIgnoreCase);
+        readonly Dictionary<string, Transform> _availableTransforms = new Dictionary<string, Transform>(StringComparer.OrdinalIgnoreCase);
 
         protected TransformFactory()
         {
-            availableTransforms.Add("xml", new Transform { CommandLine = "xml", Description = "output results to xUnit.net v2 style XML file", OutputHandler = Handler_DirectWrite });
+            _availableTransforms.Add("xml", new Transform { CommandLine = "xml", Description = "output results to xUnit.net v2 style XML file", OutputHandler = Handler_DirectWrite });
         }
 
         public static List<Transform> AvailableTransforms
         {
-            get { return instance.availableTransforms.Values.ToList(); }
+            get { return Instance._availableTransforms.Values.ToList(); }
         }
 
         public static List<Action<XElement>> GetXmlTransformers(XunitProject project)
         {
-            return project.Output.Select(output => new Action<XElement>(xml => instance.availableTransforms[output.Key].OutputHandler(xml, output.Value))).ToList();
+            return project.Output.Select(output => new Action<XElement>(xml => Instance._availableTransforms[output.Key].OutputHandler(xml, output.Value))).ToList();
         }
 
         static void Handler_DirectWrite(XElement xml, string outputFileName)

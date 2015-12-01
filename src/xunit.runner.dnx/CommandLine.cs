@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Xunit.Runner.Dnx
+namespace Xunit.Runner.DotNet
 {
     public class CommandLine
     {
-        readonly Stack<string> arguments = new Stack<string>();
-        readonly IReadOnlyList<IRunnerReporter> reporters;
+        readonly Stack<string> _arguments = new Stack<string>();
+        readonly IReadOnlyList<IRunnerReporter> _reporters;
 
         protected CommandLine(IReadOnlyList<IRunnerReporter> reporters, string[] args, Predicate<string> fileExists = null)
         {
-            this.reporters = reporters;
+            _reporters = reporters;
 
             if (fileExists == null)
                 fileExists = fileName => File.Exists(fileName);
 
             for (var i = args.Length - 1; i >= 0; i--)
-                arguments.Push(args[i]);
+                _arguments.Push(args[i]);
 
             DesignTimeTestUniqueNames = new List<string>();
             Project = Parse(fileExists);
@@ -79,17 +79,17 @@ namespace Xunit.Runner.Dnx
 
         protected XunitProject Parse(Predicate<string> fileExists)
         {
-            if (arguments.Count == 0)
+            if (_arguments.Count == 0)
                 throw new ArgumentException("must specify at least one assembly");
 
-            var assemblyFile = arguments.Pop();
+            var assemblyFile = _arguments.Pop();
             string configFile = null;
-            if (arguments.Count > 0)
+            if (_arguments.Count > 0)
             {
-                var value = arguments.Peek();
+                var value = _arguments.Peek();
                 if (!value.StartsWith("-") && value.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                 {
-                    configFile = arguments.Pop();
+                    configFile = _arguments.Pop();
                     if (!fileExists(configFile))
                         throw new ArgumentException(string.Format("config file not found: {0}", configFile));
                 }
@@ -98,9 +98,9 @@ namespace Xunit.Runner.Dnx
             var assemblies = new List<Tuple<string, string>> { Tuple.Create(assemblyFile, configFile) };
             var project = GetProjectFile(assemblies);
 
-            while (arguments.Count > 0)
+            while (_arguments.Count > 0)
             {
-                var option = PopOption(arguments);
+                var option = PopOption(_arguments);
                 var optionName = option.Key.ToLowerInvariant();
 
                 if (!optionName.StartsWith("-"))
@@ -168,22 +168,22 @@ namespace Xunit.Runner.Dnx
 
                     switch (parallelismOption)
                     {
-                        case ParallelismOption.all:
+                        case ParallelismOption.All:
                             ParallelizeAssemblies = true;
                             ParallelizeTestCollections = true;
                             break;
 
-                        case ParallelismOption.assemblies:
+                        case ParallelismOption.Assemblies:
                             ParallelizeAssemblies = true;
                             ParallelizeTestCollections = false;
                             break;
 
-                        case ParallelismOption.collections:
+                        case ParallelismOption.Collections:
                             ParallelizeAssemblies = false;
                             ParallelizeTestCollections = true;
                             break;
 
-                        case ParallelismOption.none:
+                        case ParallelismOption.None:
                         default:
                             ParallelizeAssemblies = false;
                             ParallelizeTestCollections = false;
@@ -259,7 +259,7 @@ namespace Xunit.Runner.Dnx
                 else
                 {
                     // Might be a reporter...
-                    var reporter = reporters.FirstOrDefault(r => string.Equals(r.RunnerSwitch, optionName, StringComparison.OrdinalIgnoreCase));
+                    var reporter = _reporters.FirstOrDefault(r => string.Equals(r.RunnerSwitch, optionName, StringComparison.OrdinalIgnoreCase));
                     if (reporter != null)
                     {
                         GuardNoOptionValue(option);
