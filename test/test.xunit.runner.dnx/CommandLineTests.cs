@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Runner.Dnx;
+using Xunit.Runner.DotNet;
 
 public class CommandLineTests
 {
@@ -524,12 +524,13 @@ public class CommandLineTests
         }
 
         [Theory]
-        [InlineData("none", false, false)]
-        [InlineData("assemblies", true, false)]
-        [InlineData("collections", false, true)]
-        [InlineData("all", true, true)]
+        [InlineData("None", false, false)]
+        [InlineData("Assemblies", true, false)]
+        [InlineData("Collections", false, true)]
+        [InlineData("All", true, true)]
         public static void ParallelCanBeTurnedOn(string parallelOption, bool expectedAssemblyParallelization, bool expectedCollectionsParallelization)
         {
+
             var project = TestableCommandLine.Parse("assemblyName.dll", "-parallel", parallelOption);
 
             Assert.Equal(expectedAssemblyParallelization, project.ParallelizeAssemblies);

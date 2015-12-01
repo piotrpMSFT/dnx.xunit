@@ -2,12 +2,10 @@
     "frameworks": {
         "dnx451": { },
         "dnxcore50": { }
-    },
-    "dependencies": {
-        "xunit": "2.1.0",
-        "xunit.runner.dnx": ""
-    },
-    "commands": {
-        "test": "xunit.runner.dnx"
-    }
+	},
+	"testRunner":"xunit",
+	"dependencies": {
+		"xunit": "2.1.0",
+		"dotnet-test-xunit": "99.99.99-dev"
+	}
 }
