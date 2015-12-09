@@ -5,12 +5,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.Extensions.Testing.Abstractions;
 using Microsoft.DotNet.ProjectModel;
+using Microsoft.DotNet.ProjectModel.Loader;
+using NuGet.Frameworks;
 using Xunit.Abstractions;
 using ISourceInformationProvider = Xunit.Abstractions.ISourceInformationProvider;
 using VsTestCase = Microsoft.Extensions.Testing.Abstractions.Test;
@@ -26,12 +29,16 @@ namespace Xunit.Runner.DotNet
         bool _failed;
         IRunnerLogger _logger;
         IMessageSink _reporterMessageHandler;
-        ITestDiscoverySink _testDiscoverySink;
-        ITestExecutionSink _testExecutionSink;
+        readonly ITestDiscoverySink _testDiscoverySink;
+        readonly ITestExecutionSink _testExecutionSink;
 
         public static int Main(string[] args)
         {
             DebugHelper.HandleDebugSwitch(ref args);
+
+            var projectPath = args[0];
+            args = args.Skip(1).ToArray();
+            AssemblyLoadContext.InitializeDefaultContext(ProjectContext.Create(projectPath, FrameworkConstants.CommonFrameworks.DnxCore50, new[] { RuntimeIdentifier.Current }).CreateLoadContext());
 
             return new Program().Run(args);
         }
@@ -414,7 +421,7 @@ namespace Xunit.Runner.DotNet
         {
             var directoryPath = Path.GetDirectoryName(assembly.AssemblyFilename);
             var assemblyName = Path.GetFileNameWithoutExtension(assembly.AssemblyFilename);
-            var pdbPath = Path.Combine(directoryPath, assemblyName + FileNameSuffixes.ProgramDatabase);
+            var pdbPath = Path.Combine(directoryPath, assemblyName + FileNameSuffixes.DotNet.ProgramDatabase);
 
             return File.Exists(pdbPath) 
                 ? new SourceInformationProviderAdapater(new SourceInformationProvider(pdbPath, null)) 
