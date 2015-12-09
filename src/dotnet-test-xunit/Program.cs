@@ -36,11 +36,25 @@ namespace Xunit.Runner.DotNet
         {
             DebugHelper.HandleDebugSwitch(ref args);
 
-            var projectPath = args[0];
-            args = args.Skip(1).ToArray();
+            var dllPath = args[0];
+            var projectPath = GetProjectPathFromDllPath(dllPath);
             AssemblyLoadContext.InitializeDefaultContext(ProjectContext.Create(projectPath, FrameworkConstants.CommonFrameworks.DnxCore50, new[] { RuntimeIdentifier.Current }).CreateLoadContext());
 
             return new Program().Run(args);
+        }
+
+        // This is a temporary workaround.
+        private static string GetProjectPathFromDllPath(string dllPath)
+        {
+            var directory = new DirectoryInfo(Path.GetDirectoryName(dllPath));
+            while (directory != directory.Root && directory.EnumerateFiles().All(f => f.Name != "project.json"))
+            {
+                directory = directory.Parent;
+            }
+            
+            var projectFile = directory.EnumerateFiles().FirstOrDefault(f => f.Name == "project.json");
+
+            return projectFile?.FullName;
         }
 
         public Program()
